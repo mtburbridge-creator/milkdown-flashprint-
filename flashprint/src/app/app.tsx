@@ -257,7 +257,7 @@ export const App = defineComponent({
             <span class="status-dot" />
             {/* The pill is a flex box, so every child is a block. One
                 span keeps the whole status on one innerText line. */}
-            <span class="status-text">
+            <span>
               {statusParts.value.head}
               {statusParts.value.tail && (
                 <span class="status-tail">{statusParts.value.tail}</span>

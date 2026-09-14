@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue'
+import { defineComponent, type VNode } from 'vue'
 
 import type { PaperName, RoundingMode } from '../core/types'
 import type { Settings, TouchedFields } from './state'
@@ -11,9 +11,19 @@ interface DockProps {
   touched: TouchedFields
 }
 
-interface Segment<T> {
+interface Segment<T extends string> {
   value: T
   label: string
+}
+
+/// One labelled segmented control. `extra` holds a trailing segment
+/// that carries its own widget, such as the exact page count.
+interface SegmentedField<T extends string> {
+  label: string
+  segments: Array<Segment<T>>
+  selected: T
+  onSelect: (value: T) => void
+  extra?: VNode
 }
 
 const LAYOUT_SEGMENTS: Array<Segment<Settings['page']['layout']>> = [
@@ -51,6 +61,32 @@ function clamp(value: number, min: number, max: number): number {
 
 function segmentClass(selected: boolean): string[] {
   return selected ? ['dock-segment', 'is-selected'] : ['dock-segment']
+}
+
+function segmentedField<T extends string>(field: SegmentedField<T>): VNode {
+  return (
+    <div class="dock-field">
+      <div class="dock-label">{field.label}</div>
+      <div
+        class="dock-row dock-segmented"
+        role="group"
+        aria-label={field.label}
+      >
+        {field.segments.map((segment) => (
+          <button
+            type="button"
+            key={segment.value}
+            class={segmentClass(segment.value === field.selected)}
+            aria-pressed={segment.value === field.selected}
+            onClick={() => field.onSelect(segment.value)}
+          >
+            {segment.label}
+          </button>
+        ))}
+        {field.extra}
+      </div>
+    </div>
+  )
 }
 
 export const Dock = defineComponent<DockProps>({
@@ -106,49 +142,21 @@ export const Dock = defineComponent<DockProps>({
 
       return (
         <div class="dock">
-          <div class="dock-field">
-            <div class="dock-label">Layout</div>
-            <div
-              class="dock-row dock-segmented"
-              role="group"
-              aria-label="Layout"
-            >
-              {LAYOUT_SEGMENTS.map((segment) => (
-                <button
-                  type="button"
-                  key={segment.value}
-                  class={segmentClass(settings.page.layout === segment.value)}
-                  aria-pressed={settings.page.layout === segment.value}
-                  onClick={() => onLayoutChange(segment.value)}
-                >
-                  {segment.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {segmentedField({
+            label: 'Layout',
+            segments: LAYOUT_SEGMENTS,
+            selected: settings.page.layout,
+            onSelect: onLayoutChange,
+          })}
 
-          <div class="dock-field">
-            <div class="dock-label">Paper</div>
-            <div
-              class="dock-row dock-segmented"
-              role="group"
-              aria-label="Paper"
-            >
-              {PAPER_SEGMENTS.map((segment) => (
-                <button
-                  type="button"
-                  key={segment.value}
-                  class={segmentClass(settings.page.paper === segment.value)}
-                  aria-pressed={settings.page.paper === segment.value}
-                  onClick={() => {
-                    settings.page.paper = segment.value
-                  }}
-                >
-                  {segment.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {segmentedField({
+            label: 'Paper',
+            segments: PAPER_SEGMENTS,
+            selected: settings.page.paper,
+            onSelect: (value) => {
+              settings.page.paper = value
+            },
+          })}
 
           <div class="dock-field">
             <div class="dock-label">Margin</div>
@@ -175,24 +183,12 @@ export const Dock = defineComponent<DockProps>({
             </div>
           </div>
 
-          <div class="dock-field">
-            <div class="dock-label">Round pages to</div>
-            <div
-              class="dock-row dock-segmented"
-              role="group"
-              aria-label="Round pages to"
-            >
-              {ROUNDING_SEGMENTS.map((segment) => (
-                <button
-                  type="button"
-                  key={segment.value}
-                  class={segmentClass(settings.fit.rounding === segment.value)}
-                  aria-pressed={settings.fit.rounding === segment.value}
-                  onClick={() => onRoundingChange(segment.value)}
-                >
-                  {segment.label}
-                </button>
-              ))}
+          {segmentedField({
+            label: 'Round pages to',
+            segments: ROUNDING_SEGMENTS,
+            selected: settings.fit.rounding,
+            onSelect: onRoundingChange,
+            extra: (
               <span class={[...segmentClass(exact), 'dock-exact']}>
                 <button
                   type="button"
@@ -215,8 +211,8 @@ export const Dock = defineComponent<DockProps>({
                   }}
                 />
               </span>
-            </div>
-          </div>
+            ),
+          })}
 
           <div class="dock-field">
             <div class="dock-label">Font px · min / base</div>

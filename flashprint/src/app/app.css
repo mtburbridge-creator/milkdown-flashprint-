@@ -15,14 +15,16 @@
   --fp-paper: #f1e7d3;
   --fp-sheet: #f7f1e3;
   --fp-ink: #2a2420;
-  --fp-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
 }
 
+/* The design states content box sizes. A dock cell width below adds
+   the padding and the border of that cell to match. */
 * {
   box-sizing: border-box;
 }
 
 body {
+  margin: 0;
   background: var(--fp-bg);
   color: var(--fp-text);
   font-family:
@@ -249,19 +251,25 @@ body {
   left: 0;
 }
 
+/* The mount is scaled, so the multiplier holds the design shadow of
+   0 4px 24px at its stated size on screen. A custom property resolves
+   where it is declared, so this cannot come from a token. */
 .preview-mount .fp-sheet {
-  box-shadow: var(--fp-shadow);
+  box-shadow: 0 calc(4px * var(--fp-preview-unscale, 1))
+    calc(24px * var(--fp-preview-unscale, 1)) rgba(0, 0, 0, 0.55);
 }
 
-/* The gap lives inside the scaled mount, so `preview.tsx` divides it by
-   the scale to keep the same distance on screen at any sheet size. */
+/* The gap lives inside the scaled mount, so the multiplier keeps the
+   same distance on screen at any sheet size. */
 .preview-mount .fp-sheet + .fp-sheet {
-  margin-top: var(--fp-preview-gap, 0);
+  margin-top: calc(var(--fp-preview-gap, 0) * var(--fp-preview-unscale, 1));
 }
 
 .preview-caption {
   position: absolute;
   font-size: 11px;
+  /* preview.tsx adds this height to the gap below a sheet. */
+  line-height: 15px;
   color: var(--fp-text-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -275,7 +283,7 @@ body {
   align-items: center;
   gap: 28px;
   padding: 0 24px;
-  border-top: 1px solid var(--fp-border-strong);
+  border-top: 1px solid rgba(201, 166, 107, 0.3);
   background: var(--fp-bg-dock);
 }
 
@@ -295,15 +303,10 @@ body {
 
 .dock-row {
   display: flex;
-  align-items: center;
   border: 1px solid var(--fp-border-strong);
   border-radius: 6px;
   overflow: hidden;
   font-size: 12px;
-}
-
-.dock-segmented > * + * {
-  border-left: 1px solid rgba(201, 166, 107, 0.2);
 }
 
 .dock-segment,
@@ -316,6 +319,10 @@ body {
   color: var(--fp-text);
   cursor: pointer;
   transition: background-color 120ms ease;
+}
+
+.dock-segmented > * + * {
+  border-left: 1px solid rgba(201, 166, 107, 0.2);
 }
 
 .dock-segment:not(.is-selected):hover,
@@ -348,7 +355,7 @@ body {
 }
 
 .dock-exact-input {
-  width: 26px;
+  width: 28px;
   padding: 1px 0;
   border: 1px solid rgba(201, 166, 107, 0.3);
   border-radius: 4px;
