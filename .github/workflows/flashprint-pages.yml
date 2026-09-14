@@ -42,6 +42,7 @@ jobs:
         run: pnpm --filter=@milkdown/flashprint run build
         env:
           FLASHPRINT_BASE: /milkdown-flashprint-/
+          FLASHPRINT_OUT_DIR: dist
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
