@@ -16,7 +16,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // A sandbox without the matching Playwright download can point
+        // this at any Chromium binary.
+        launchOptions: process.env.FLASHPRINT_CHROMIUM
+          ? { executablePath: process.env.FLASHPRINT_CHROMIUM }
+          : {},
+      },
     },
   ],
   webServer: {

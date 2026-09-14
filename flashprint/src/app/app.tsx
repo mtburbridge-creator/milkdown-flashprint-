@@ -44,9 +44,15 @@ function getPrintRoot(): HTMLElement {
   return el
 }
 
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`
+}
+
 function formatStatus(result: FitResult, rounding: string): string {
+  const pages = count(result.pages, 'page')
+  const sheets = count(result.sheets, 'sheet')
   if (rounding === 'none') {
-    return `${result.pages} pages on ${result.sheets} sheets at default size`
+    return `${pages} on ${sheets} at default size`
   }
   if (!result.reached) {
     return (
@@ -56,10 +62,7 @@ function formatStatus(result: FitResult, rounding: string): string {
   }
   const fontPx = result.compaction.fontPx.toFixed(1)
   const lineHeight = result.compaction.lineHeight.toFixed(1)
-  return (
-    `${result.pages} pages on ${result.sheets} sheets · font ${fontPx}px ` +
-    `· line ${lineHeight}`
-  )
+  return `${pages} on ${sheets} · font ${fontPx}px · line ${lineHeight}`
 }
 
 export const App = defineComponent({
