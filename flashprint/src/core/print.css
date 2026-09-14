@@ -1,0 +1,317 @@
+/* Print typography. The app injects the @page rule, because the sheet size
+   depends on the page settings. */
+
+.fp-doc {
+  --fp-font-size: 16px;
+  --fp-line-height: 1.5;
+  --fp-paragraph-gap: 0.6em;
+  --fp-heading-gap: 1.4em;
+  --fp-block-gap: 0.8em;
+  --fp-heading-scale: 1;
+
+  font-family: 'Noto Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: var(--fp-font-size);
+  line-height: var(--fp-line-height);
+  color: #000;
+  background: transparent;
+}
+
+/* Every length below is in em, so the font size variable scales the whole
+   document. */
+.fp-doc * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.fp-doc p {
+  margin-top: var(--fp-paragraph-gap);
+}
+
+.fp-doc > :first-child,
+.fp-doc li > :first-child {
+  margin-top: 0;
+}
+
+.fp-doc h1,
+.fp-doc h2,
+.fp-doc h3,
+.fp-doc h4,
+.fp-doc h5,
+.fp-doc h6 {
+  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: var(--fp-heading-gap);
+}
+
+.fp-doc h1 {
+  font-size: calc(2em * var(--fp-heading-scale));
+}
+
+.fp-doc h2 {
+  font-size: calc(1.6em * var(--fp-heading-scale));
+}
+
+.fp-doc h3 {
+  font-size: calc(1.3em * var(--fp-heading-scale));
+}
+
+.fp-doc h4 {
+  font-size: calc(1.15em * var(--fp-heading-scale));
+}
+
+.fp-doc h5 {
+  font-size: calc(1.05em * var(--fp-heading-scale));
+}
+
+.fp-doc h6 {
+  font-size: calc(1em * var(--fp-heading-scale));
+}
+
+.fp-doc ul,
+.fp-doc ol {
+  padding-left: 1.5em;
+  margin-top: var(--fp-paragraph-gap);
+}
+
+.fp-doc li + li {
+  margin-top: calc(var(--fp-paragraph-gap) * 0.35);
+}
+
+.fp-doc li > ul,
+.fp-doc li > ol {
+  margin-top: 0;
+}
+
+.fp-doc pre {
+  font-family: 'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;
+  font-size: 0.85em;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #f3f3f3;
+  padding: 0.6em 0.8em;
+  margin: var(--fp-block-gap) 0;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.fp-doc code {
+  font-family: 'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+  background: #f3f3f3;
+  padding: 0.1em 0.25em;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.fp-doc pre code {
+  font-size: 1em;
+  background: transparent;
+  padding: 0;
+}
+
+.fp-doc blockquote {
+  margin: var(--fp-block-gap) 0;
+  padding-left: 1em;
+  border-left: 3px solid #bbb;
+}
+
+.fp-doc table {
+  border-collapse: collapse;
+  margin: var(--fp-block-gap) 0;
+  width: auto;
+  max-width: 100%;
+  font-size: 0.9em;
+}
+
+.fp-doc th,
+.fp-doc td {
+  border: 1px solid #999;
+  padding: 0.25em 0.6em;
+}
+
+.fp-doc th {
+  font-weight: 700;
+}
+
+.fp-doc img {
+  max-width: 100%;
+  height: auto;
+}
+
+.fp-doc figure {
+  margin: var(--fp-block-gap) 0;
+  text-align: center;
+}
+
+.fp-doc figcaption {
+  font-size: 0.85em;
+  font-style: italic;
+  text-align: center;
+}
+
+.fp-doc hr {
+  border: none;
+  border-top: 1px solid #999;
+  margin: var(--fp-block-gap) 0;
+}
+
+.fp-doc a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.fp-doc del {
+  text-decoration: line-through;
+}
+
+.fp-doc em {
+  font-style: italic;
+}
+
+.fp-doc strong {
+  font-weight: 700;
+}
+
+.fp-doc sup,
+.fp-doc sub {
+  font-size: 0.75em;
+  line-height: 0;
+}
+
+.fp-doc sup {
+  vertical-align: super;
+}
+
+.fp-doc sub {
+  vertical-align: sub;
+}
+
+.fp-doc .fp-task {
+  list-style: none;
+  position: relative;
+  padding-left: 1.4em;
+}
+
+.fp-doc .fp-checkbox {
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  border: 1px solid #444;
+  border-radius: 2px;
+}
+
+.fp-doc .fp-task-done .fp-checkbox::after {
+  content: '\2713';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.15em;
+  font-size: 0.85em;
+  line-height: 1;
+  text-align: center;
+}
+
+.fp-doc .fp-math-block {
+  margin: var(--fp-block-gap) 0;
+  text-align: center;
+}
+
+/* Fragmentation. The fitter relaxes the strict rules when it runs out of
+   room. */
+.fp-doc p,
+.fp-doc li {
+  orphans: 2;
+  widows: 2;
+}
+
+.fp-doc pre,
+.fp-doc table,
+.fp-doc figure,
+.fp-doc blockquote,
+.fp-doc .fp-math-block {
+  break-inside: avoid;
+}
+
+.fp-doc tr {
+  break-inside: avoid;
+}
+
+.fp-doc h1,
+.fp-doc h2,
+.fp-doc h3,
+.fp-doc h4,
+.fp-doc h5,
+.fp-doc h6 {
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+.fp-doc[data-relax-breaks='true'] pre,
+.fp-doc[data-relax-breaks='true'] table,
+.fp-doc[data-relax-breaks='true'] blockquote {
+  break-inside: auto;
+}
+
+/* One definition of the page flow. `measurePages` counts the columns this
+   produces, and every preview page shows one of them. The two must agree. */
+.fp-paged {
+  width: var(--fp-content-w);
+  height: var(--fp-content-h);
+  column-width: var(--fp-content-w);
+  column-gap: 0;
+  column-fill: auto;
+}
+
+.fp-sheets .fp-sheet {
+  width: var(--fp-sheet-w);
+  height: var(--fp-sheet-h);
+  display: flex;
+  background: #fff;
+  overflow: hidden;
+  break-after: page;
+  page-break-after: always;
+}
+
+.fp-sheets .fp-page {
+  width: var(--fp-page-w);
+  height: var(--fp-page-h);
+  padding: var(--fp-margin);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.fp-sheets .fp-window {
+  width: var(--fp-content-w);
+  height: var(--fp-content-h);
+  overflow: hidden;
+}
+
+.fp-sheets .fp-page-number {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--fp-margin) * 0.35);
+  text-align: center;
+  font:
+    9px/1 'Noto Sans',
+    sans-serif;
+  color: #666;
+}
+
+@media screen {
+  .fp-sheets .fp-sheet {
+    box-shadow: 0 1px 6px rgb(0 0 0 / 25%);
+  }
+
+  /* The fold line of a two-up sheet. It guides the eye on screen and must
+     not reach the paper. */
+  .fp-sheets[data-layout='two-up'] .fp-page + .fp-page {
+    border-left: 1px dashed #ccc;
+  }
+}

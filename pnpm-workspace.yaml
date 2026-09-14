@@ -3,6 +3,7 @@ packages:
   - 'packages/plugins/*'
   - 'packages/integrations/*'
   - e2e
+  - flashprint
   - storybook
   - dev
   - docs

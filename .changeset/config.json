@@ -9,6 +9,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@milkdown/e2e",
+    "@milkdown/flashprint",
     "@milkdown/storybook",
     "@milkdown/dev",
     "@milkdown/docs"

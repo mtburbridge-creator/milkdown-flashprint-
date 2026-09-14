@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "lib",
+    "jsx": "preserve",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
+    "jsxImportSource": "vue",
+    "sourceMap": false,
+    "tsBuildInfoFile": "./lib/tsconfig.tsbuildinfo",
+    "types": ["vite/client"]
+  },
+  "include": ["src", "tests", "vite.config.mts", "playwright.config.ts"],
+  "references": [{ "path": "../packages/crepe" }, { "path": "../packages/kit" }]
+}

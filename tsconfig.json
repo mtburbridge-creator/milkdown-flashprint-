@@ -5,6 +5,7 @@
     { "path": "./dev" },
     { "path": "./docs" },
     { "path": "./e2e" },
+    { "path": "./flashprint" },
     { "path": "./packages/components" },
     { "path": "./packages/core" },
     { "path": "./packages/crepe" },

@@ -1,0 +1,23 @@
+{
+  "name": "@milkdown/flashprint",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Paste markdown, fit it to a page count, print it.",
+  "type": "module",
+  "scripts": {
+    "start": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host --port 4174",
+    "test": "playwright test",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@milkdown/crepe": "workspace:*",
+    "@milkdown/kit": "workspace:*",
+    "katex": "^0.18.0",
+    "vue": "^3.5.20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.1"
+  }
+}
