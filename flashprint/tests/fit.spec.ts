@@ -192,9 +192,21 @@ test('a stored font size over the cap is clamped and the app still loads', async
     JSON.parse(localStorage.getItem('flashprint:settings') ?? '{}')
   )
   expect(stored.fit.maxFontPx).toBe(25)
+  // A value in progress is left alone. Only Enter or leaving the field
+  // commits and caps it.
   const baseInput = page.locator('input[aria-label="Base font size in pixels"]')
-  await baseInput.fill('105')
+  await baseInput.fill('1')
+  await expect(baseInput).toHaveValue('1')
+  await baseInput.type('05')
+  await expect(baseInput).toHaveValue('105')
+  await baseInput.press('Enter')
   await expect(baseInput).toHaveValue('25')
+  const minInput = page.locator(
+    'input[aria-label="Minimum font size in pixels"]'
+  )
+  await minInput.fill('15')
+  await minInput.blur()
+  await expect(minInput).toHaveValue('15')
 })
 
 test('an unfinished refit mark resets the fit settings on load', async ({
