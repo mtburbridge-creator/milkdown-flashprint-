@@ -28,8 +28,12 @@ jobs:
 
       - uses: ./.github/actions/setup
 
+      # Enables Pages on first run, so the repository needs no manual
+      # setup beyond the pages permission above.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Build prose package
         run: pnpm --filter=@milkdown/prose run build
