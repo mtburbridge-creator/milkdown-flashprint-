@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:1056px;height:816px;display:flex;background:{{ paper }};overflow:hidden;font-family:'Noto Sans',sans-serif;font-size:13px;line-height:1.4;color:#000;">
+  <div style="width:528px;height:816px;padding:48px;position:relative;box-sizing:border-box;">
+    <div style="width:432px;height:720px;overflow:hidden;">
+      <h1 style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:26px;line-height:1.2;margin:0;">Notes on Spaced Repetition</h1>
+      <p style="margin:8px 0 0;">Spaced repetition is a learning technique that schedules review sessions at increasing intervals. Instead of cramming, a learner sees each fact right before it would otherwise be forgotten. This document summarizes the idea, the evidence behind it, and how to put it into practice.</p>
+      <h2 style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:21px;line-height:1.2;margin:18px 0 0;">Why forgetting is predictable</h2>
+      <p style="margin:8px 0 0;">Hermann Ebbinghaus measured his own recall of nonsense syllables in the 1880s and found that memory decays on a curve, fast at first and then slower. The practical consequence: a short delay before the first review does more to cement a memory than reviewing immediately.</p>
+      <ul style="margin:8px 0 0;padding-left:20px;"><li>Recall drops fastest in the first day after learning.</li><li style="margin-top:3px;">Each successful review flattens the curve further out.</li><li style="margin-top:3px;">A failed review resets the interval, not the whole schedule.</li><li style="margin-top:3px;">Interleaving topics improves retention over blocked practice.</li></ul>
+      <h2 style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:21px;line-height:1.2;margin:18px 0 0;">A simple algorithm</h2>
+      <p style="margin:8px 0 0;">Most spaced repetition software schedules cards with a variant of the SM-2 algorithm. The steps below describe one review cycle.</p>
+      <ol style="margin:8px 0 0;padding-left:20px;"><li>Show the card and record whether the answer was correct.</li><li style="margin-top:3px;">Update an ease factor based on how hard the recall felt.</li><li style="margin-top:3px;">Multiply the previous interval by the ease factor.</li><li style="margin-top:3px;">Schedule the next review that many days out.</li><li style="margin-top:3px;">If the answer was wrong, reset the interval to one day.</li></ol>
+      <h3 style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:17px;line-height:1.2;margin:18px 0 0;">Ease factor bounds</h3>
+      <table style="border-collapse:collapse;margin:10px 0 0;font-size:12px;">
+        <tr><th style="border:1px solid #999;padding:3px 8px;text-align:left;">Grade</th><th style="border:1px solid #999;padding:3px 8px;text-align:left;">Meaning</th><th style="border:1px solid #999;padding:3px 8px;text-align:left;">Ease change</th></tr>
+        <tr><td style="border:1px solid #999;padding:3px 8px;">0</td><td style="border:1px solid #999;padding:3px 8px;">Complete blackout</td><td style="border:1px solid #999;padding:3px 8px;">-0.8</td></tr>
+        <tr><td style="border:1px solid #999;padding:3px 8px;">1</td><td style="border:1px solid #999;padding:3px 8px;">Wrong, but familiar</td><td style="border:1px solid #999;padding:3px 8px;">-0.54</td></tr>
+        <tr><td style="border:1px solid #999;padding:3px 8px;">2</td><td style="border:1px solid #999;padding:3px 8px;">Wrong, easy to recall</td><td style="border:1px solid #999;padding:3px 8px;">-0.32</td></tr>
+        <tr><td style="border:1px solid #999;padding:3px 8px;">3</td><td style="border:1px solid #999;padding:3px 8px;">Correct, with effort</td><td style="border:1px solid #999;padding:3px 8px;">-0.14</td></tr>
+      </table>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:17px;text-align:center;font:9px/1 'Noto Sans',sans-serif;color:#666;">{{ p1 }} / {{ pages }}</div>
+  </div>
+  <div style="width:528px;height:816px;padding:48px;position:relative;box-sizing:border-box;border-left:1px dashed {{ fold }};">
+    <div style="width:432px;height:720px;overflow:hidden;">
+      <table style="border-collapse:collapse;margin:0;font-size:12px;">
+        <tr><td style="border:1px solid #999;padding:3px 8px;">4</td><td style="border:1px solid #999;padding:3px 8px;">Correct, after hesitation</td><td style="border:1px solid #999;padding:3px 8px;">0.0</td></tr>
+        <tr><td style="border:1px solid #999;padding:3px 8px;">5</td><td style="border:1px solid #999;padding:3px 8px;">Correct, instant</td><td style="border:1px solid #999;padding:3px 8px;">+0.1</td></tr>
+      </table>
+      <p style="margin:8px 0 0;">The ease factor is clamped so it never drops below 1.3. A deck that stays above 2.5 on average is a deck of facts the learner already knows well; new material pulls the average down again.</p>
+      <blockquote style="margin:10px 0 0;padding-left:12px;border-left:3px solid #bbb;">The point of spaced repetition is not to make review easy. It is to make review happen exactly when it is about to become hard, which is the moment recall does the most for retention.</blockquote>
+      <h2 style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:21px;line-height:1.2;margin:18px 0 0;">Building a deck</h2>
+      <p style="margin:8px 0 0;">A good card asks one question. A card that bundles three facts forces a partial-credit grade, which the algorithm cannot schedule well.</p>
+      <ul style="margin:8px 0 0;padding-left:20px;list-style:none;"><li>☑ Write the question as a specific, answerable prompt.</li><li style="margin-top:3px;">☑ Keep the answer short enough to grade at a glance.</li><li style="margin-top:3px;">☐ Add an image only when the image is the thing being tested.</li><li style="margin-top:3px;">☐ Delete or rewrite any card graded wrong three times in a row.</li></ul>
+      <p style="margin:8px 0 0;">Cloze deletions work well for vocabulary: <code style="font-family:'JetBrains Mono',monospace;font-size:0.9em;background:#f3f3f3;padding:1px 3px;">The mitochondrion is the <span>{</span>{c1::powerhouse}<span>}</span> of the cell.</code> They work poorly for anything that needs multi-step reasoning, since the algorithm cannot tell which step tripped the learner up.</p>
+      <h2 style="font-family:'Noto Serif',Georgia,serif;font-weight:600;font-size:21px;line-height:1.2;margin:18px 0 0;">Practical tips</h2>
+      <p style="margin:8px 0 0;">Review in short daily sessions rather than long infrequent ones. A five-minute session every day outperforms a single weekly hour, because the timing of each card matters more than the total time spent.</p>
+      <pre style="font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.35;background:#f3f3f3;padding:8px 10px;margin:10px 0 0;white-space:pre-wrap;">interface Card {
+  interval: number
+  ease: number
+  due: Date
+}</pre>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:17px;text-align:center;font:9px/1 'Noto Sans',sans-serif;color:#666;">{{ p2 }} / {{ pages }}</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1056,&quot;height&quot;:816},&quot;paper&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#ffffff&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;fold&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#cccccc&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;p1&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;1&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;p2&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;pages&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;4&quot;,&quot;tsType&quot;:&quot;string&quot;}}"></script>
+</body>
+</html>

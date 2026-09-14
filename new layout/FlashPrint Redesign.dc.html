@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #1a1f26; font-family: 'Noto Sans', sans-serif; }
+    a { color: #c9a66b; } a:hover { color: #e3c27e; }
+  </style>
+</helmet>
+
+<section data-screen-label="Turn 1 — three directions" style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="color:#c9a66b;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;">Turn 1 · Dark slate + brass, parchment document</div>
+  <div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start;">
+
+    <!-- ═══════════ 1a · Ledger — same layout, refined chrome ═══════════ -->
+    <div id="1a" data-screen-label="1a Ledger" style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;color:#e8dcc0;font-size:14px;"><span style="background:#c9a66b;color:#1f262e;font-weight:700;font-size:12px;padding:2px 8px;border-radius:4px;">1a</span>Ledger — same arrangement as today, restyled. Document floats as a parchment card; controls become segmented pills.</div>
+      <div style="width:1440px;height:900px;background:#2c3541;color:#c9a66b;display:flex;flex-direction:column;overflow:hidden;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:'Noto Sans',sans-serif;">
+        <header style="display:flex;align-items:center;gap:16px;padding:0 20px;height:56px;border-bottom:1px solid rgba(201,166,107,.22);background:#28303b;flex-shrink:0;">
+          <span style="font-family:'Noto Serif',serif;font-weight:600;font-size:19px;color:#e3c27e;letter-spacing:.01em;margin-right:12px;">FlashPrint</span>
+          <div style="display:flex;gap:8px;">
+            <button style="font:inherit;font-size:13px;font-weight:500;padding:7px 14px;border:1px solid rgba(201,166,107,.45);border-radius:999px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Paste markdown</button>
+            <button style="font:inherit;font-size:13px;font-weight:500;padding:7px 14px;border:1px solid rgba(201,166,107,.45);border-radius:999px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Open .md</button>
+            <button style="font:inherit;font-size:13px;font-weight:500;padding:7px 14px;border:1px solid rgba(201,166,107,.45);border-radius:999px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Clear</button>
+            <button style="font:inherit;font-size:13px;font-weight:700;padding:7px 18px;border:1px solid #c9a66b;border-radius:999px;background:#c9a66b;color:#1f262e;cursor:pointer;" style-hover="background:#e3c27e">Print</button>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:#c9a66b;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:#c9a66b;display:inline-block;"></span>4 pages on 2 sheets · font 13.5px · line 1.4</div>
+        </header>
+        <div style="display:flex;flex:1;min-height:0;">
+          <div style="flex:1;min-width:0;overflow:hidden;background:#2c3541;padding:32px 40px 0;display:flex;justify-content:center;">
+            <div style="width:760px;box-sizing:border-box;background:#f1e7d3;border-radius:6px 6px 0 0;box-shadow:0 2px 24px rgba(0,0,0,.35);padding:48px 56px;overflow:hidden;">
+              <dc-import name="FpDoc" ink="#2a2420" heading="#3b2f1e" muted="#9a8a6e" rule="#d6c9ad" accent="#b8945a" code-bg="#e6dabf" code-ink="#8a4a1c" paper="#f1e7d3" hint-size="648px,1200px"></dc-import>
+            </div>
+          </div>
+          <div style="width:440px;flex-shrink:0;display:flex;flex-direction:column;min-height:0;border-left:1px solid rgba(201,166,107,.22);">
+            <div style="flex-shrink:0;padding:16px 20px 18px;border-bottom:1px solid rgba(201,166,107,.22);background:#28303b;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Layout</div>
+                <div style="display:flex;border:1px solid rgba(201,166,107,.35);border-radius:8px;overflow:hidden;font-size:13px;">
+                  <div style="flex:1;text-align:center;padding:7px 10px;background:#c9a66b;color:#1f262e;font-weight:600;">Two-up · landscape</div>
+                  <div style="flex:1;text-align:center;padding:7px 10px;color:#c9a66b;">Single · portrait</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Paper
+                  <div style="display:flex;align-items:center;justify-content:space-between;font:400 13px 'Noto Sans',sans-serif;letter-spacing:0;text-transform:none;padding:7px 10px;border:1px solid rgba(201,166,107,.35);border-radius:8px;background:#1f262e;color:#e3c27e;">Letter<span style="font-size:10px;">▾</span></div>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Margin (in)
+                  <div style="font:400 13px 'Noto Sans',sans-serif;letter-spacing:0;text-transform:none;padding:7px 10px;border:1px solid rgba(201,166,107,.35);border-radius:8px;background:#1f262e;color:#e3c27e;">0.5</div>
+                </label>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Round pages to</div>
+                <div style="display:flex;border:1px solid rgba(201,166,107,.35);border-radius:8px;overflow:hidden;font-size:13px;">
+                  <div style="flex:1;text-align:center;padding:7px 8px;color:#c9a66b;">None</div>
+                  <div style="flex:1;text-align:center;padding:7px 8px;color:#c9a66b;border-left:1px solid rgba(201,166,107,.2);">Even</div>
+                  <div style="flex:1;text-align:center;padding:7px 8px;background:#c9a66b;color:#1f262e;font-weight:600;">×4</div>
+                  <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 8px;color:#c9a66b;border-left:1px solid rgba(201,166,107,.2);">Exact<span style="width:34px;padding:2px 4px;border:1px solid rgba(201,166,107,.3);border-radius:5px;background:#1f262e;font-size:12px;text-align:center;color:#8a7a56;">4</span></div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Min font (px)
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;font:400 13px 'Noto Sans',sans-serif;letter-spacing:0;text-transform:none;padding:7px 10px;border:1px solid rgba(201,166,107,.35);border-radius:8px;background:#1f262e;color:#e3c27e;">10<span style="font-size:11px;color:#a9945f;">7.5 pt</span></div>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Base font (px)
+                  <div style="font:400 13px 'Noto Sans',sans-serif;letter-spacing:0;text-transform:none;padding:7px 10px;border:1px solid rgba(201,166,107,.35);border-radius:8px;background:#1f262e;color:#e3c27e;">16</div>
+                </label>
+              </div>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#c9a66b;">Page numbers
+                <span style="width:34px;height:20px;border-radius:999px;background:#c9a66b;position:relative;display:inline-block;"><span style="position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;background:#1f262e;"></span></span>
+              </label>
+              <p style="margin:0;font-size:11px;line-height:1.45;color:#a9945f;">In the print dialog choose Landscape, Margins: None, Scale: 100%, and turn off headers and footers. Page size is set by the app.</p>
+            </div>
+            <div style="flex:1;min-height:0;overflow:hidden;padding:16px;background:#232b35;display:flex;flex-direction:column;align-items:center;gap:22px;">
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+                <div style="width:392px;height:303px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.5);"><div style="transform:scale(0.371);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#f7f1e3" fold="#c9b995" p1="1" p2="2" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+                <div style="font-size:11px;color:#a9945f;">Sheet 1 of 2</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+                <div style="width:392px;height:303px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.5);"><div style="transform:scale(0.371);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#f7f1e3" fold="#c9b995" p1="3" p2="4" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+                <div style="font-size:11px;color:#a9945f;">Sheet 2 of 2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ 1b · Rail — settings left, document center, preview right ═══════════ -->
+    <div id="1b" data-screen-label="1b Rail" style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;color:#e8dcc0;font-size:14px;"><span style="background:#c9a66b;color:#1f262e;font-weight:700;font-size:12px;padding:2px 8px;border-radius:4px;">1b</span>Rail — settings move to a left rail, the document takes the center full-bleed, and the preview gets its own full-height column.</div>
+      <div style="width:1440px;height:900px;background:#2c3541;color:#c9a66b;display:flex;flex-direction:column;overflow:hidden;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:'Noto Sans',sans-serif;">
+        <header style="display:flex;align-items:center;gap:16px;padding:0 20px;height:48px;border-bottom:1px solid rgba(201,166,107,.22);background:#232b35;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:10px;"><span style="width:10px;height:10px;background:#c9a66b;transform:rotate(45deg);display:inline-block;"></span><span style="font-family:'Noto Serif',serif;font-weight:600;font-size:17px;color:#e3c27e;">FlashPrint</span></div>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+            <button style="font:inherit;font-size:13px;padding:6px 12px;border:none;border-radius:6px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Paste markdown</button>
+            <button style="font:inherit;font-size:13px;padding:6px 12px;border:none;border-radius:6px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Open .md</button>
+            <button style="font:inherit;font-size:13px;padding:6px 12px;border:none;border-radius:6px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Clear</button>
+            <span style="width:1px;height:20px;background:rgba(201,166,107,.3);margin:0 6px;"></span>
+            <button style="font:inherit;font-size:13px;font-weight:700;padding:6px 16px;border:none;border-radius:6px;background:#c9a66b;color:#1f262e;cursor:pointer;" style-hover="background:#e3c27e">Print</button>
+          </div>
+        </header>
+        <div style="display:flex;flex:1;min-height:0;">
+          <aside style="width:300px;flex-shrink:0;background:#232b35;border-right:1px solid rgba(201,166,107,.22);padding:20px;display:flex;flex-direction:column;gap:22px;overflow:hidden;">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Layout</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;background:rgba(201,166,107,.14);border:1px solid #c9a66b;color:#e3c27e;"><span style="width:14px;height:14px;border-radius:50%;border:4px solid #c9a66b;background:#1f262e;box-sizing:border-box;"></span>Two pages per sheet · landscape</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid rgba(201,166,107,.25);color:#c9a66b;"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #a9945f;box-sizing:border-box;"></span>One page per sheet · portrait</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Paper</div>
+              <div style="display:flex;border-bottom:1px solid rgba(201,166,107,.25);font-size:13px;">
+                <div style="padding:8px 12px;color:#e3c27e;border-bottom:2px solid #c9a66b;margin-bottom:-1px;font-weight:600;">Letter</div>
+                <div style="padding:8px 12px;color:#a9945f;">A4</div>
+                <div style="padding:8px 12px;color:#a9945f;">Legal</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Margin<span style="color:#e3c27e;">0.50 in</span></div>
+              <div style="position:relative;height:4px;border-radius:2px;background:rgba(201,166,107,.25);margin:8px 0;"><div style="position:absolute;left:0;top:0;bottom:0;width:23%;background:#c9a66b;border-radius:2px;"></div><div style="position:absolute;left:23%;top:50%;width:14px;height:14px;border-radius:50%;background:#e3c27e;transform:translate(-50%,-50%);box-shadow:0 1px 3px rgba(0,0,0,.5);"></div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Round pages to</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;">
+                <div style="padding:8px 10px;border-radius:8px;border:1px solid rgba(201,166,107,.25);color:#c9a66b;text-align:center;">None</div>
+                <div style="padding:8px 10px;border-radius:8px;border:1px solid rgba(201,166,107,.25);color:#c9a66b;text-align:center;">Even</div>
+                <div style="padding:8px 10px;border-radius:8px;border:1px solid #c9a66b;background:#c9a66b;color:#1f262e;text-align:center;font-weight:600;">Multiple of 4</div>
+                <div style="padding:6px 10px;border-radius:8px;border:1px solid rgba(201,166,107,.25);color:#c9a66b;display:flex;align-items:center;justify-content:center;gap:6px;">Exact<span style="width:30px;text-align:center;border:1px solid rgba(201,166,107,.3);border-radius:5px;font-size:12px;padding:1px 0;color:#8a7a56;">4</span></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Font size</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <div style="padding:8px 10px;border-radius:8px;background:#1f262e;border:1px solid rgba(201,166,107,.25);"><div style="font-size:10px;color:#a9945f;">Minimum</div><div style="display:flex;align-items:baseline;gap:4px;color:#e3c27e;font-size:16px;">10<span style="font-size:11px;color:#a9945f;">px · 7.5 pt</span></div></div>
+                <div style="padding:8px 10px;border-radius:8px;background:#1f262e;border:1px solid rgba(201,166,107,.25);"><div style="font-size:10px;color:#a9945f;">Base</div><div style="display:flex;align-items:baseline;gap:4px;color:#e3c27e;font-size:16px;">16<span style="font-size:11px;color:#a9945f;">px</span></div></div>
+              </div>
+            </div>
+            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#c9a66b;">Page numbers
+              <span style="width:34px;height:20px;border-radius:999px;background:#c9a66b;position:relative;display:inline-block;"><span style="position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;background:#1f262e;"></span></span>
+            </label>
+            <p style="margin:auto 0 0;font-size:11px;line-height:1.45;color:#a9945f;">Print dialog: Landscape, Margins None, Scale 100%, headers and footers off. Page size is set by the app.</p>
+          </aside>
+          <div style="flex:1;min-width:0;background:#f1e7d3;overflow:hidden;padding:56px 96px 0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);">
+            <dc-import name="FpDoc" ink="#2a2420" heading="#3b2f1e" muted="#9a8a6e" rule="#d6c9ad" accent="#b8945a" code-bg="#e6dabf" code-ink="#8a4a1c" paper="#f1e7d3" hint-size="100%,1200px"></dc-import>
+          </div>
+          <div style="width:400px;flex-shrink:0;background:#232b35;border-left:1px solid rgba(201,166,107,.22);display:flex;flex-direction:column;overflow:hidden;">
+            <div style="padding:14px 20px;border-bottom:1px solid rgba(201,166,107,.22);display:flex;flex-direction:column;gap:2px;">
+              <div style="display:flex;align-items:baseline;gap:6px;color:#e3c27e;"><span style="font-family:'Noto Serif',serif;font-size:26px;font-weight:600;">4</span><span style="font-size:13px;">pages on</span><span style="font-family:'Noto Serif',serif;font-size:26px;font-weight:600;">2</span><span style="font-size:13px;">sheets</span></div>
+              <div style="font-size:12px;color:#a9945f;">font 13.5px · line 1.4 · target reached</div>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:20px;display:flex;flex-direction:column;align-items:center;gap:20px;">
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+                <div style="width:344px;height:266px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.5);"><div style="transform:scale(0.326);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#f7f1e3" fold="#c9b995" p1="1" p2="2" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+                <div style="font-size:11px;color:#a9945f;">Sheet 1 of 2</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+                <div style="width:344px;height:266px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.5);"><div style="transform:scale(0.326);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#f7f1e3" fold="#c9b995" p1="3" p2="4" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+                <div style="font-size:11px;color:#a9945f;">Sheet 2 of 2</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ 1c · Dock — editor + preview split, controls in a bottom dock ═══════════ -->
+    <div id="1c" data-screen-label="1c Dock" style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;color:#e8dcc0;font-size:14px;"><span style="background:#c9a66b;color:#1f262e;font-weight:700;font-size:12px;padding:2px 8px;border-radius:4px;">1c</span>Dock — editor and a large preview share the width; all fit controls collapse into one bottom dock so both documents get full height.</div>
+      <div style="width:1440px;height:900px;background:#2c3541;color:#c9a66b;display:flex;flex-direction:column;overflow:hidden;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:'Noto Sans',sans-serif;">
+        <header style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 20px;height:52px;border-bottom:1px solid rgba(201,166,107,.22);background:#28303b;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <span style="font-family:'Noto Serif',serif;font-weight:600;font-size:18px;color:#e3c27e;">FlashPrint</span>
+            <span style="font-size:12px;color:#a9945f;">notes-on-spaced-repetition.md</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 14px;border-radius:999px;background:#1f262e;border:1px solid rgba(201,166,107,.3);font-size:12px;color:#e3c27e;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:#c9a66b;"></span>4 pages on 2 sheets<span style="color:#a9945f;">· font 13.5px · line 1.4</span></div>
+          <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center;">
+            <button style="font:inherit;font-size:13px;padding:6px 12px;border:none;border-radius:6px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Paste</button>
+            <button style="font:inherit;font-size:13px;padding:6px 12px;border:none;border-radius:6px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Open .md</button>
+            <button style="font:inherit;font-size:13px;padding:6px 12px;border:none;border-radius:6px;background:transparent;color:#c9a66b;cursor:pointer;" style-hover="background:rgba(201,166,107,.1)">Clear</button>
+            <button style="font:inherit;font-size:13px;font-weight:700;padding:7px 18px;margin-left:6px;border:none;border-radius:6px;background:#c9a66b;color:#1f262e;cursor:pointer;box-shadow:0 0 0 1px #e3c27e inset;" style-hover="background:#e3c27e">Print</button>
+          </div>
+        </header>
+        <div style="display:flex;flex:1;min-height:0;">
+          <div style="flex:0 0 792px;box-sizing:border-box;min-width:0;background:#f1e7d3;overflow:hidden;padding:48px 80px 0;position:relative;">
+            <dc-import name="FpDoc" ink="#2a2420" heading="#3b2f1e" muted="#9a8a6e" rule="#d6c9ad" accent="#b8945a" code-bg="#e6dabf" code-ink="#8a4a1c" paper="#f1e7d3" hint-size="100%,1200px"></dc-import>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:60px;background:linear-gradient(rgba(241,231,211,0),#f1e7d3);"></div>
+          </div>
+          <div style="flex:1;min-width:0;background:#232b35;border-left:1px solid rgba(201,166,107,.22);overflow:hidden;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:26px;">
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+              <div style="width:585px;height:452px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.55);"><div style="transform:scale(0.554);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#f7f1e3" fold="#c9b995" p1="1" p2="2" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+              <div style="font-size:11px;color:#a9945f;letter-spacing:.06em;text-transform:uppercase;">Sheet 1 of 2</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+              <div style="width:585px;height:452px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.55);"><div style="transform:scale(0.554);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#f7f1e3" fold="#c9b995" p1="3" p2="4" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+              <div style="font-size:11px;color:#a9945f;letter-spacing:.06em;text-transform:uppercase;">Sheet 2 of 2</div>
+            </div>
+          </div>
+        </div>
+        <footer style="flex-shrink:0;height:76px;background:#1f262e;border-top:1px solid rgba(201,166,107,.3);display:flex;align-items:center;gap:28px;padding:0 24px;">
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Layout</div>
+            <div style="display:flex;border:1px solid rgba(201,166,107,.35);border-radius:6px;overflow:hidden;font-size:12px;">
+              <div style="padding:5px 12px;background:#c9a66b;color:#1f262e;font-weight:600;">Two-up</div>
+              <div style="padding:5px 12px;color:#c9a66b;">Single</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Paper</div>
+            <div style="display:flex;border:1px solid rgba(201,166,107,.35);border-radius:6px;overflow:hidden;font-size:12px;">
+              <div style="padding:5px 12px;background:#c9a66b;color:#1f262e;font-weight:600;">Letter</div>
+              <div style="padding:5px 12px;color:#c9a66b;border-left:1px solid rgba(201,166,107,.2);">A4</div>
+              <div style="padding:5px 12px;color:#c9a66b;border-left:1px solid rgba(201,166,107,.2);">Legal</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Margin</div>
+            <div style="display:flex;align-items:center;border:1px solid rgba(201,166,107,.35);border-radius:6px;font-size:12px;overflow:hidden;">
+              <div style="padding:5px 10px;color:#c9a66b;">−</div><div style="padding:5px 10px;color:#e3c27e;background:#28303b;min-width:52px;text-align:center;">0.5 in</div><div style="padding:5px 10px;color:#c9a66b;">+</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Round pages to</div>
+            <div style="display:flex;border:1px solid rgba(201,166,107,.35);border-radius:6px;overflow:hidden;font-size:12px;">
+              <div style="padding:5px 12px;color:#c9a66b;">None</div>
+              <div style="padding:5px 12px;color:#c9a66b;border-left:1px solid rgba(201,166,107,.2);">Even</div>
+              <div style="padding:5px 12px;background:#c9a66b;color:#1f262e;font-weight:600;">×4</div>
+              <div style="padding:3px 10px;color:#c9a66b;border-left:1px solid rgba(201,166,107,.2);display:flex;align-items:center;gap:6px;">Exact<span style="width:26px;text-align:center;border:1px solid rgba(201,166,107,.3);border-radius:4px;font-size:11px;color:#8a7a56;">4</span></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#a9945f;">Font px · min / base</div>
+            <div style="display:flex;align-items:center;border:1px solid rgba(201,166,107,.35);border-radius:6px;font-size:12px;overflow:hidden;">
+              <div style="padding:5px 12px;color:#e3c27e;background:#28303b;min-width:44px;text-align:center;">10</div>
+              <div style="padding:5px 6px;color:#a9945f;">→</div>
+              <div style="padding:5px 12px;color:#e3c27e;background:#28303b;min-width:44px;text-align:center;">16</div>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;font-size:12px;color:#c9a66b;margin-left:auto;">Page numbers
+            <span style="width:34px;height:20px;border-radius:999px;background:#c9a66b;position:relative;display:inline-block;"><span style="position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;background:#1f262e;"></span></span>
+          </label>
+        </footer>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ Current — faithful recreation from flashprint/src/app ═══════════ -->
+<section data-screen-label="Current FlashPrint" style="display:flex;flex-direction:column;gap:12px;padding:0 40px 40px;">
+  <div style="color:#8a94a3;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;">Current app · recreated from flashprint/src/app/app.css, app.tsx, controls.tsx, preview.tsx</div>
+  <div style="width:1440px;height:900px;background:#ffffff;color:#1c1c1f;display:flex;flex-direction:column;overflow:hidden;font-family:'Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <header style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:8px 16px;border-bottom:1px solid #d8d8dd;background:#fff;flex-shrink:0;">
+      <span style="font-weight:700;font-size:15px;margin-right:8px;">FlashPrint</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button style="font:inherit;font-size:13px;padding:6px 12px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;cursor:pointer;" style-hover="background:#e9e9ec">Paste markdown</button>
+        <button style="font:inherit;font-size:13px;padding:6px 12px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;cursor:pointer;" style-hover="background:#e9e9ec">Open .md</button>
+        <button style="font:inherit;font-size:13px;padding:6px 12px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;cursor:pointer;" style-hover="background:#e9e9ec">Clear</button>
+        <button style="font:inherit;font-size:13px;padding:6px 12px;border:1px solid #2f5fd8;border-radius:6px;background:#2f5fd8;color:#fff;cursor:pointer;">Print</button>
+      </div>
+      <div style="font-size:12px;color:#6b6b73;margin-left:auto;white-space:nowrap;">4 pages on 2 sheets · font 13.5px · line 1.4</div>
+    </header>
+    <div style="display:flex;flex:1;min-height:0;">
+      <div style="flex:1;min-width:0;overflow:hidden;background:#fff;padding:32px 40px;">
+        <dc-import name="FpDoc" ink="#000000" heading="#000000" muted="#a8a8a8" rule="#dcdcdc" accent="#d5d5d5" code-bg="#e6e6e6" code-ink="#ba1a1a" paper="#ffffff" hint-size="100%,1200px"></dc-import>
+      </div>
+      <div style="width:440px;flex-shrink:0;display:flex;flex-direction:column;min-height:0;border-left:1px solid #d8d8dd;">
+        <div style="flex-shrink:0;padding:12px 16px;border-bottom:1px solid #d8d8dd;background:#fff;display:flex;flex-direction:column;gap:12px;">
+          <fieldset style="border:1px solid #d8d8dd;border-radius:6px;padding:8px 10px;margin:0;display:flex;flex-direction:column;gap:6px;">
+            <legend style="font-size:12px;font-weight:600;color:#6b6b73;padding:0 4px;">Layout</legend>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="radio" checked="{{ true }}" readOnly="{{ true }}" style="margin:3px;">Two pages per sheet (landscape)</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="radio" readOnly="{{ true }}" style="margin:3px;">One page per sheet (portrait)</label>
+          </fieldset>
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;">Paper
+            <div style="font:400 13px 'Noto Sans',sans-serif;padding:5px 8px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;display:flex;justify-content:space-between;">Letter<span style="font-size:10px;">▾</span></div>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;">Margin (in)
+            <div style="font:400 13px 'Noto Sans',sans-serif;padding:5px 8px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;">0.5</div>
+          </label>
+          <fieldset style="border:1px solid #d8d8dd;border-radius:6px;padding:8px 10px;margin:0;display:flex;flex-direction:column;gap:6px;">
+            <legend style="font-size:12px;font-weight:600;color:#6b6b73;padding:0 4px;">Round pages to</legend>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="radio" readOnly="{{ true }}" style="margin:3px;">None</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="radio" readOnly="{{ true }}" style="margin:3px;">Even</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="radio" checked="{{ true }}" readOnly="{{ true }}" style="margin:3px;">Multiple of 4</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="radio" readOnly="{{ true }}" style="margin:3px;">Exact<span style="width:64px;margin-left:6px;font:inherit;padding:3px 6px;border:1px solid #d8d8dd;border-radius:6px;color:#9a9aa1;background:#f5f5f7;">4</span></label>
+          </fieldset>
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;">Minimum font size (px)
+            <div style="font:400 13px 'Noto Sans',sans-serif;padding:5px 8px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;">10</div>
+            <span style="font-size:11px;font-weight:400;color:#6b6b73;">7.5 pt</span>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;">Base font size (px)
+            <div style="font:400 13px 'Noto Sans',sans-serif;padding:5px 8px;border:1px solid #d8d8dd;border-radius:6px;background:#fff;color:#1c1c1f;">16</div>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" checked="{{ true }}" readOnly="{{ true }}" style="margin:3px;">Page numbers</label>
+          <p style="font-size:11px;color:#6b6b73;line-height:1.4;margin:0;">In the print dialog choose Landscape (or Portrait for one page per sheet), Margins: None, Scale: 100%, and turn off headers and footers. Page size is set by the app.</p>
+        </div>
+        <div style="flex:1;min-height:0;overflow:hidden;padding:16px;background:#e9e9ec;display:flex;flex-direction:column;align-items:center;gap:22px;">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+            <div style="width:392px;height:303px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.16),0 1px 2px rgba(0,0,0,.1);"><div style="transform:scale(0.371);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#ffffff" fold="#cccccc" p1="1" p2="2" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+            <div style="font-size:11px;color:#6b6b73;">Sheet 1 of 2</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+            <div style="width:392px;height:303px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.16),0 1px 2px rgba(0,0,0,.1);"><div style="transform:scale(0.371);transform-origin:top left;width:1056px;height:816px;"><dc-import name="FpSheet" paper="#ffffff" fold="#cccccc" p1="3" p2="4" pages="4" hint-size="1056px,816px"></dc-import></div></div>
+            <div style="font-size:11px;color:#6b6b73;">Sheet 2 of 2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
