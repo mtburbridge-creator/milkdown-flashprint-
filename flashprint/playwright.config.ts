@@ -10,7 +10,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4174',
+    baseURL: 'http://127.0.0.1:4174/FlashPrint/',
     trace: 'on-first-retry',
   },
   projects: [
@@ -28,7 +28,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm run build && pnpm run preview',
-    url: 'http://127.0.0.1:4174',
+    url: 'http://127.0.0.1:4174/FlashPrint/',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

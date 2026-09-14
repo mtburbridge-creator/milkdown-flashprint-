@@ -2,5 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "buildCommand": "pnpm --filter=@milkdown/prose run build && pnpm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://markburbridge.com/FlashPrint",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    { "source": "/FlashPrint", "destination": "/FlashPrint/index.html" },
+    { "source": "/FlashPrint/:path*", "destination": "/FlashPrint/index.html" }
+  ]
 }

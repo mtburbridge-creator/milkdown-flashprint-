@@ -82,7 +82,7 @@ function longMarkdown(sections: number): string {
 test('two-up sample document prints one PDF page per sheet', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('.')
   const status = await expectPrintMatchesPreview(page)
   expect(status.font).toBe(16)
 })
@@ -98,7 +98,7 @@ test('long document is shrunk to one page fewer than natural', async ({
       JSON.stringify({ fit: { rounding: 'none' } })
     )
   }, markdown)
-  await page.goto('/')
+  await page.goto('.')
   const natural = await waitForFit(page)
   expect(natural.pages).toBeGreaterThan(4)
 
@@ -131,7 +131,7 @@ test('single layout prints one page per sheet', async ({ page }) => {
       })
     )
   }, longMarkdown(6))
-  await page.goto('/')
+  await page.goto('.')
   const status = await expectPrintMatchesPreview(page)
   expect(status.pages).toBe(status.sheets)
   expect(status.pages % 2).toBe(0)
@@ -141,7 +141,7 @@ test('preview layout settles after a long document loads', async ({ page }) => {
   await page.addInitScript((md: string) => {
     localStorage.setItem('flashprint:markdown', md)
   }, longMarkdown(14))
-  await page.goto('/')
+  await page.goto('.')
   await waitForFit(page)
   await page.waitForTimeout(800)
   // A scrollbar that toggles as the sheet scale changes would keep
