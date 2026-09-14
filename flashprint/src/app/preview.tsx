@@ -17,7 +17,17 @@ interface SheetRect {
 
 /// Vertical gap between a sheet's bottom edge and its caption, in
 /// screen pixels, applied after scaling.
-const CAPTION_OFFSET_PX = 6
+const CAPTION_OFFSET_PX = 8
+
+/// Height of one caption line, in screen pixels.
+const CAPTION_HEIGHT_PX = 13
+
+/// Space between a caption and the next sheet, in screen pixels.
+const GROUP_GAP_PX = 26
+
+/// Space below a sheet, in screen pixels. The sheets are scaled, so the
+/// gap goes into the mount divided by the scale.
+const SHEET_GAP_PX = CAPTION_OFFSET_PX + CAPTION_HEIGHT_PX + GROUP_GAP_PX
 
 /// Width the sheets may occupy: the pane's content box, without its
 /// padding. `clientWidth` alone would include the padding and make the
@@ -126,6 +136,7 @@ export const Preview = defineComponent({
               style={{
                 transform: `scale(${scale.value})`,
                 transformOrigin: 'top left',
+                '--fp-preview-gap': `${SHEET_GAP_PX / scale.value}px`,
               }}
             />
             {rects.value.map((rect, index) => (

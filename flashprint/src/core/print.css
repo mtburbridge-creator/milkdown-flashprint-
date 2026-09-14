@@ -306,12 +306,13 @@
 
 @media screen {
   .fp-sheets .fp-sheet {
+    background: #f7f1e3;
     box-shadow: 0 1px 6px rgb(0 0 0 / 25%);
   }
 
   /* The fold line of a two-up sheet. It guides the eye on screen and must
      not reach the paper. */
   .fp-sheets[data-layout='two-up'] .fp-page + .fp-page {
-    border-left: 1px dashed #ccc;
+    border-left: 1px dashed #c9b995;
   }
 }
