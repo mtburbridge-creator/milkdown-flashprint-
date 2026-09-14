@@ -63,6 +63,12 @@ function echo(event: Event, value: number): void {
   if (Number(input.value) !== value) input.value = String(value)
 }
 
+/// Enter commits a number cell. Leaving the field fires `change` on its
+/// own, so a blur is all Enter has to do.
+function commitOnEnter(event: KeyboardEvent): void {
+  if (event.key === 'Enter') (event.target as HTMLInputElement).blur()
+}
+
 /// Keeps the margin on the step grid. A sum of steps in binary floating
 /// point drifts away from the two decimals the label shows.
 function roundMargin(inches: number): number {
@@ -232,7 +238,8 @@ export const Dock = defineComponent<DockProps>({
                   max={EXACT_PAGES_MAX}
                   disabled={!exact}
                   value={settings.fit.exactPages}
-                  onInput={onExactPagesChange}
+                  onChange={onExactPagesChange}
+                  onKeydown={commitOnEnter}
                 />
               </span>
             ),
@@ -250,7 +257,8 @@ export const Dock = defineComponent<DockProps>({
                 min={FONT_MIN_PX}
                 max={FONT_MAX_PX}
                 value={settings.fit.minFontPx}
-                onInput={onMinFontChange}
+                onChange={onMinFontChange}
+                onKeydown={commitOnEnter}
               />
               <span class="dock-arrow">→</span>
               <input
@@ -261,7 +269,8 @@ export const Dock = defineComponent<DockProps>({
                 min={FONT_MIN_PX}
                 max={FONT_MAX_PX}
                 value={settings.fit.maxFontPx}
-                onInput={onMaxFontChange}
+                onChange={onMaxFontChange}
+                onKeydown={commitOnEnter}
               />
             </div>
           </div>
