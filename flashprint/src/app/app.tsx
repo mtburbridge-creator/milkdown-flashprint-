@@ -15,8 +15,8 @@ import type { FitResult } from '../core/types'
 
 import { resolvePageBox } from '../core'
 import { createRefitController } from './controller'
-import { Controls } from './controls'
 import { debounce } from './debounce'
+import { Dock } from './dock'
 import { updatePageRule } from './page-rule'
 import { Preview } from './preview'
 import {
@@ -31,6 +31,12 @@ import {
 const MARKDOWN_DEBOUNCE_MS = 250
 const MARKDOWN_FILE_PATTERN = /\.(md|markdown|txt)$/i
 const CLIPBOARD_HINT_MS = 4000
+const CLIPBOARD_HINT = 'Press Ctrl+V inside the editor'
+const STATUS_SEPARATOR = ' · '
+const PRINT_TIPS =
+  'In the print dialog choose Landscape (or Portrait for one page per ' +
+  'sheet), Margins: None, Scale: 100%, and turn off headers and footers. ' +
+  'Page size is set by the app.'
 
 /// Finds or creates the detached root Chromium prints from. It lives
 /// outside the Vue tree so a refit can replace its contents without
@@ -77,6 +83,7 @@ export const App = defineComponent({
     const fitResult = shallowRef<FitResult | null>(null)
     const clipboardHint = ref(false)
     const dragActive = ref(false)
+    const fileName = ref('')
 
     let crepe: Crepe | null = null
     let clipboardHintTimer: ReturnType<typeof setTimeout> | undefined
@@ -110,6 +117,7 @@ export const App = defineComponent({
     async function pasteMarkdown() {
       try {
         const text = await navigator.clipboard.readText()
+        fileName.value = ''
         replaceEditorContent(text)
       } catch {
         clipboardHint.value = true
@@ -126,6 +134,7 @@ export const App = defineComponent({
 
     async function loadMarkdownFile(file: File) {
       const text = await file.text()
+      fileName.value = file.name
       replaceEditorContent(text)
     }
 
@@ -137,6 +146,7 @@ export const App = defineComponent({
     }
 
     function clearEditor() {
+      fileName.value = ''
       replaceEditorContent('')
     }
 
@@ -216,6 +226,15 @@ export const App = defineComponent({
 
     const statusWarning = computed(() => fitResult.value?.reached === false)
 
+    /// Splits the status at its first separator. The tail carries the
+    /// font and line figures, which the pill shows in a muted color.
+    const statusParts = computed(() => {
+      const text = clipboardHint.value ? CLIPBOARD_HINT : statusText.value
+      const separator = text.indexOf(STATUS_SEPARATOR)
+      if (separator < 0) return { head: text, tail: '' }
+      return { head: text.slice(0, separator), tail: text.slice(separator) }
+    })
+
     return () => (
       <div
         class="app-shell"
@@ -224,10 +243,30 @@ export const App = defineComponent({
         onDrop={onDrop}
       >
         <header class="top-bar">
-          <span class="app-name">FlashPrint</span>
+          <div class="top-bar-title">
+            <span class="app-name">FlashPrint</span>
+            {fileName.value && <span class="file-name">{fileName.value}</span>}
+          </div>
+          <div
+            class={[
+              'status-line',
+              statusWarning.value && 'status-warning',
+              !statusParts.value.head && 'is-empty',
+            ]}
+          >
+            <span class="status-dot" />
+            {/* The pill is a flex box, so every child is a block. One
+                span keeps the whole status on one innerText line. */}
+            <span>
+              {statusParts.value.head}
+              {statusParts.value.tail && (
+                <span class="status-tail">{statusParts.value.tail}</span>
+              )}
+            </span>
+          </div>
           <div class="top-bar-actions">
             <button type="button" onClick={pasteMarkdown}>
-              Paste markdown
+              Paste
             </button>
             <button type="button" onClick={openFilePicker}>
               Open .md
@@ -242,14 +281,14 @@ export const App = defineComponent({
             <button type="button" onClick={clearEditor}>
               Clear
             </button>
-            <button type="button" class="primary" onClick={printDoc}>
+            <button
+              type="button"
+              class="primary"
+              title={PRINT_TIPS}
+              onClick={printDoc}
+            >
               Print
             </button>
-          </div>
-          <div class={['status-line', statusWarning.value && 'status-warning']}>
-            {clipboardHint.value
-              ? 'Press Ctrl+V inside the editor'
-              : statusText.value}
           </div>
         </header>
 
@@ -257,15 +296,12 @@ export const App = defineComponent({
           <div class="editor-pane">
             <div class="crepe fp-editor" ref={editorRootRef} />
           </div>
-          <div class="side-pane">
-            <div class="controls-panel">
-              <Controls settings={settings} touched={touched} />
-            </div>
-            <div class="preview-pane-wrapper">
-              <Preview sheets={previewSheets.value} />
-            </div>
+          <div class="preview-pane-wrapper">
+            <Preview sheets={previewSheets.value} />
           </div>
         </div>
+
+        <Dock settings={settings} touched={touched} />
 
         {dragActive.value && (
           <div class="drop-overlay">Drop a .md or .txt file to load it</div>
