@@ -136,3 +136,41 @@ test('single layout prints one page per sheet', async ({ page }) => {
   expect(status.pages).toBe(status.sheets)
   expect(status.pages % 2).toBe(0)
 })
+
+test('preview layout settles after a long document loads', async ({ page }) => {
+  await page.addInitScript((md: string) => {
+    localStorage.setItem('flashprint:markdown', md)
+  }, longMarkdown(14))
+  await page.goto('/')
+  await waitForFit(page)
+  await page.waitForTimeout(800)
+  // A scrollbar that toggles as the sheet scale changes would keep
+  // rewriting the scale box styles. Once settled, nothing may change.
+  const mutations = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        const box = document.querySelector('.preview-scale-box')
+        const mount = document.querySelector('.preview-mount')
+        if (!box || !mount) {
+          resolve(-1)
+          return
+        }
+        let count = 0
+        const observer = new MutationObserver((records) => {
+          count += records.length
+        })
+        observer.observe(box, { attributes: true })
+        observer.observe(mount, { attributes: true })
+        setTimeout(() => {
+          observer.disconnect()
+          resolve(count)
+        }, 1500)
+      })
+  )
+  expect(mutations).toBe(0)
+  const overflow = await page.evaluate(() => {
+    const pane = document.querySelector('.preview-pane') as HTMLElement
+    return pane.scrollWidth - pane.clientWidth
+  })
+  expect(overflow).toBe(0)
+})

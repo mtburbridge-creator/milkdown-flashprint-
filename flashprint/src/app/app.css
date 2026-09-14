@@ -145,7 +145,12 @@ body {
 .preview-pane {
   flex: 1;
   min-width: 0;
-  overflow-y: auto;
+  /* The scrollbar keeps its space at all times. A scrollbar that comes
+     and goes would change the width the sheet scale is computed from
+     and make the layout oscillate. */
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   padding: 16px;
   background: var(--fp-bg-muted);
 }

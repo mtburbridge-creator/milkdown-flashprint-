@@ -19,6 +19,18 @@ interface SheetRect {
 /// screen pixels, applied after scaling.
 const CAPTION_OFFSET_PX = 6
 
+/// Width the sheets may occupy: the pane's content box, without its
+/// padding. `clientWidth` alone would include the padding and make the
+/// scaled sheet overflow sideways.
+function availableWidth(pane: HTMLElement): number {
+  const style = getComputedStyle(pane)
+  return (
+    pane.clientWidth -
+    parseFloat(style.paddingLeft) -
+    parseFloat(style.paddingRight)
+  )
+}
+
 interface PreviewProps {
   sheets: HTMLElement | null
 }
@@ -57,7 +69,10 @@ export const Preview = defineComponent({
       naturalWidth.value = width
       naturalHeight.value = mount.scrollHeight
 
-      scale.value = width > 0 ? Math.min(1, pane.clientWidth / width) : 1
+      const next = width > 0 ? Math.min(1, availableWidth(pane) / width) : 1
+      // Sub-pixel churn from scrollbar or layout rounding must not feed
+      // back into another render.
+      if (Math.abs(next - scale.value) > 0.001) scale.value = next
     }
 
     let resizeObserver: ResizeObserver | undefined
