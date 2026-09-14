@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { PageCounter } from './fit'
 import type { FitSettings, PageBox, RoundingMode } from './types'
 
-import { fitDocument } from './fit'
+import { fitDocument, fitDocumentAsync } from './fit'
 import { compactionAt, LADDER_STEPS } from './ladder'
 import { resolvePageBox } from './paper'
 
@@ -117,5 +117,53 @@ describe('fitDocument', () => {
     expect(result.pages).toBe(9)
     expect(result.reached).toBe(false)
     expect(levelOf(doc, fit)).toBe(LADDER_STEPS)
+  })
+})
+
+describe('fitDocumentAsync', () => {
+  it('matches the synchronous fitter when the budget is generous', async () => {
+    const fit = settings('exact', 5)
+    const pagesByLevel = (level: number) => (level >= 20 ? 5 : 9)
+    const sync = fitDocument({
+      doc: document.createElement('div'),
+      box: BOX,
+      fit,
+      measure: counterFrom(fit, pagesByLevel).count,
+    })
+    const async = await fitDocumentAsync({
+      doc: document.createElement('div'),
+      box: BOX,
+      fit,
+      measure: counterFrom(fit, pagesByLevel).count,
+    })
+    expect(async.level).toBe(sync.level)
+    expect(async.timedOut).toBe(false)
+  })
+
+  it('stops at the last measured level once the deadline has passed', async () => {
+    const fit = settings('exact', 5)
+    const { count, levels } = counterFrom(fit, () => 9)
+    const result = await fitDocumentAsync(
+      { doc: document.createElement('div'), box: BOX, fit, measure: count },
+      { deadline: performance.now() - 1 }
+    )
+    expect(result.timedOut).toBe(true)
+    expect(result.reached).toBe(false)
+    // Only the natural measurement ran before the deadline check.
+    expect(levels).toEqual([0])
+  })
+
+  it('stops when the signal aborts', async () => {
+    const fit = settings('exact', 5)
+    const signal = { aborted: false }
+    const { count } = counterFrom(fit, (level) => {
+      signal.aborted = true
+      return level >= 20 ? 5 : 9
+    })
+    const result = await fitDocumentAsync(
+      { doc: document.createElement('div'), box: BOX, fit, measure: count },
+      { signal }
+    )
+    expect(result.timedOut).toBe(true)
   })
 })

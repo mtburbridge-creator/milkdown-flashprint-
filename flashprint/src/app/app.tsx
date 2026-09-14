@@ -11,18 +11,26 @@ import {
   watch,
 } from 'vue'
 
-import type { FitResult } from '../core/types'
+import type { Settings } from './state'
 
 import { resolvePageBox } from '../core'
-import { createRefitController } from './controller'
+import {
+  createRefitController,
+  FIT_BUDGET_MS,
+  type RefitOutcome,
+} from './controller'
 import { debounce } from './debounce'
 import { Dock } from './dock'
 import { updatePageRule } from './page-rule'
 import { Preview } from './preview'
 import {
   createTouchedFields,
+  DEFAULT_SETTINGS,
+  lastRefitUnfinished,
   loadMarkdown,
   loadSettings,
+  markRefitFinished,
+  markRefitStarted,
   SAMPLE_MARKDOWN,
   saveMarkdown,
   saveSettings,
@@ -54,9 +62,25 @@ function count(n: number, noun: string): string {
   return `${n} ${noun}${n === 1 ? '' : 's'}`
 }
 
-function formatStatus(result: FitResult, rounding: string): string {
+const RECOVERY_NOTICE =
+  'The last fit never finished, so the fit settings were reset'
+
+function formatStatus(outcome: RefitOutcome, rounding: string): string {
+  const result = outcome.fit
   const pages = count(result.pages, 'page')
   const sheets = count(result.sheets, 'sheet')
+  if (outcome.renderedPages < result.pages) {
+    return (
+      `${pages}; only the first ${outcome.renderedPages} are shown and ` +
+      'printed. Shorten the document or lower the font'
+    )
+  }
+  if (result.timedOut) {
+    return (
+      `Fit stopped after ${FIT_BUDGET_MS / 1000} s at ${pages}; ` +
+      'shorten the document or lower the font'
+    )
+  }
   if (rounding === 'none') {
     return `${pages} on ${sheets} at default size`
   }
@@ -71,16 +95,33 @@ function formatStatus(result: FitResult, rounding: string): string {
   return `${pages} on ${sheets} · font ${fontPx}px · line ${lineHeight}`
 }
 
+/// Settings to start from. When the last refit never finished, the fit
+/// settings that drove it are dropped in favour of the defaults, so a
+/// reload cannot replay a freeze.
+function loadStartSettings(): { settings: Settings; recovered: boolean } {
+  const settings = loadSettings()
+  const recovered = lastRefitUnfinished()
+  if (recovered) {
+    markRefitFinished()
+    settings.fit = { ...DEFAULT_SETTINGS.fit }
+  }
+  // Write back at once, so a value the loader capped is gone from storage.
+  saveSettings(settings)
+  return { settings, recovered }
+}
+
 export const App = defineComponent({
   name: 'App',
   setup() {
-    const settings = reactive(loadSettings())
+    const start = loadStartSettings()
+    const settings = reactive(start.settings)
     const touched = createTouchedFields()
+    const recoveryNotice = ref(start.recovered)
 
     const editorRootRef = ref<HTMLElement | null>(null)
     const fileInputRef = ref<HTMLInputElement | null>(null)
     const previewSheets = shallowRef<HTMLElement | null>(null)
-    const fitResult = shallowRef<FitResult | null>(null)
+    const fitResult = shallowRef<RefitOutcome | null>(null)
     const clipboardHint = ref(false)
     const dragActive = ref(false)
     const fileName = ref('')
@@ -97,12 +138,19 @@ export const App = defineComponent({
       onPreviewSheets: (sheets) => {
         previewSheets.value = sheets
       },
+      onFit: (outcome) => {
+        fitResult.value = outcome
+      },
     })
 
     async function refit() {
       updatePageRule(resolvePageBox(settings.page))
-      const result = await controller.request()
-      if (result) fitResult.value = result
+      markRefitStarted()
+      try {
+        await controller.request()
+      } finally {
+        markRefitFinished()
+      }
     }
 
     const debouncedMarkdownUpdate = debounce((markdown: string) => {
@@ -199,12 +247,16 @@ export const App = defineComponent({
       // they load would size the ladder against fallback metrics.
       await document.fonts.ready
       document.fonts.addEventListener('loadingdone', onFontLoadingDone)
+      // A normal unload clears the mark; a frozen tab cannot, and that is
+      // what the next load detects.
+      window.addEventListener('pagehide', markRefitFinished)
 
       await refit()
     })
 
     onBeforeUnmount(() => {
       document.fonts.removeEventListener('loadingdone', onFontLoadingDone)
+      window.removeEventListener('pagehide', markRefitFinished)
       if (clipboardHintTimer !== undefined) clearTimeout(clipboardHintTimer)
       void crepe?.destroy()
     })
@@ -212,6 +264,7 @@ export const App = defineComponent({
     watch(
       settings,
       () => {
+        recoveryNotice.value = false
         saveSettings(settings)
         void refit()
       },
@@ -219,12 +272,22 @@ export const App = defineComponent({
     )
 
     const statusText = computed(() => {
+      if (recoveryNotice.value) return RECOVERY_NOTICE
       const result = fitResult.value
       if (!result) return ''
       return formatStatus(result, settings.fit.rounding)
     })
 
-    const statusWarning = computed(() => fitResult.value?.reached === false)
+    const statusWarning = computed(() => {
+      if (recoveryNotice.value) return true
+      const outcome = fitResult.value
+      if (!outcome) return false
+      return (
+        !outcome.fit.reached ||
+        outcome.fit.timedOut ||
+        outcome.renderedPages < outcome.fit.pages
+      )
+    })
 
     /// Splits the status at its first separator. The tail carries the
     /// font and line figures, which the pill shows in a muted color.

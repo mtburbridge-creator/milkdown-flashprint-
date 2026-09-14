@@ -174,3 +174,78 @@ test('preview layout settles after a long document loads', async ({ page }) => {
   })
   expect(overflow).toBe(0)
 })
+
+test('a stored font size over the cap is clamped and the app still loads', async ({
+  page,
+}) => {
+  await page.addInitScript((md: string) => {
+    localStorage.setItem('flashprint:markdown', md)
+    localStorage.setItem(
+      'flashprint:settings',
+      JSON.stringify({ fit: { minFontPx: 10, maxFontPx: 105 } })
+    )
+  }, longMarkdown(14))
+  await page.goto('.')
+  const status = await waitForFit(page)
+  expect(status.pages).toBeGreaterThan(0)
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('flashprint:settings') ?? '{}')
+  )
+  expect(stored.fit.maxFontPx).toBe(25)
+  const baseInput = page.locator('input[aria-label="Base font size in pixels"]')
+  await baseInput.fill('105')
+  await expect(baseInput).toHaveValue('25')
+})
+
+test('an unfinished refit mark resets the fit settings on load', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'flashprint:settings',
+      JSON.stringify({ fit: { rounding: 'exact', exactPages: 3 } })
+    )
+    localStorage.setItem('flashprint:refit-busy', '1')
+  })
+  await page.goto('.')
+  await expect(page.locator('.status-line')).toContainText('never finished')
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('flashprint:settings') ?? '{}')
+  )
+  expect(stored.fit.rounding).toBe('four')
+  expect(
+    await page.evaluate(() => localStorage.getItem('flashprint:refit-busy'))
+  ).toBeNull()
+})
+
+test('a very long document is capped instead of freezing the tab', async ({
+  page,
+}) => {
+  await page.addInitScript((md: string) => {
+    localStorage.setItem('flashprint:markdown', md)
+    localStorage.setItem(
+      'flashprint:settings',
+      JSON.stringify({ fit: { rounding: 'none', maxFontPx: 25 } })
+    )
+  }, longMarkdown(120))
+  await page.goto('.')
+  const started = Date.now()
+  await expect(page.locator('.status-line')).toContainText(
+    /only the first \d+/,
+    { timeout: 60_000 }
+  )
+  expect(Date.now() - started).toBeLessThan(60_000)
+  const status = await page.locator('.status-line').innerText()
+  const shown = Number(/only the first (\d+)/.exec(status)?.[1])
+  expect(shown).toBeGreaterThan(0)
+  await page.waitForFunction(
+    (count: number) =>
+      document.querySelectorAll('#fp-print-root .fp-page[data-page]').length ===
+      count,
+    shown,
+    { timeout: 60_000 }
+  )
+  // The tab must still answer input while the sheets are on screen.
+  const clear = page.getByRole('button', { name: 'Clear' })
+  await clear.click({ timeout: 5000 })
+})
