@@ -68,8 +68,9 @@ jobs:
       - name: Build API docs
         run: pnpm --filter=@milkdown/docs run build
 
+      # pkg-pr-new is only installed on the upstream repository.
       - name: Publish snapshot
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && github.repository == 'Milkdown/milkdown' }}
         run: >
           ./node_modules/.bin/pkg-pr-new publish --pnpm
           ./packages/plugins/*

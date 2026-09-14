@@ -6,8 +6,11 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+# Versioning and npm publishing belong to the upstream repository. A fork
+# has no npm token and must not open version pull requests.
 jobs:
   prepare:
+    if: ${{ github.repository == 'Milkdown/milkdown' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,6 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
+    if: ${{ github.repository == 'Milkdown/milkdown' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
