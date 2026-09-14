@@ -75,4 +75,7 @@ export interface FitResult {
   /// Ladder position, 0 to `LADDER_STEPS`.
   level: number
   compaction: Compaction
+  /// True when a time budget or an abort stopped the search early. The
+  /// result then holds the last level measured, not the best one.
+  timedOut: boolean
 }

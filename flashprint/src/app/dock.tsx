@@ -4,7 +4,15 @@ import type { PaperName, RoundingMode } from '../core/types'
 import type { Settings, TouchedFields } from './state'
 
 import { PAPERS } from '../core'
-import { applyLayoutSuggestions } from './state'
+import {
+  applyLayoutSuggestions,
+  clamp,
+  EXACT_PAGES_MAX,
+  FONT_MAX_PX,
+  FONT_MIN_PX,
+  MARGIN_MAX_IN,
+  MARGIN_MIN_IN,
+} from './state'
 
 interface DockProps {
   settings: Settings
@@ -42,21 +50,23 @@ const ROUNDING_SEGMENTS: Array<Segment<RoundingMode>> = [
 ]
 
 const MARGIN_STEP = 0.05
-const MARGIN_MIN = 0.2
-const MARGIN_MAX = 1.5
 
 function toNumber(event: Event): number {
   return Number((event.target as HTMLInputElement).value)
+}
+
+/// Writes a capped value back into the input. When the cap leaves the
+/// model unchanged, Vue has nothing to re-render and the typed text would
+/// stay on screen.
+function echo(event: Event, value: number): void {
+  const input = event.target as HTMLInputElement
+  if (Number(input.value) !== value) input.value = String(value)
 }
 
 /// Keeps the margin on the step grid. A sum of steps in binary floating
 /// point drifts away from the two decimals the label shows.
 function roundMargin(inches: number): number {
   return Math.round(inches * 100) / 100
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
 }
 
 function segmentClass(selected: boolean): string[] {
@@ -111,7 +121,7 @@ export const Dock = defineComponent<DockProps>({
       const next = roundMargin(
         props.settings.page.marginIn + steps * MARGIN_STEP
       )
-      props.settings.page.marginIn = clamp(next, MARGIN_MIN, MARGIN_MAX)
+      props.settings.page.marginIn = clamp(next, MARGIN_MIN_IN, MARGIN_MAX_IN)
     }
 
     function onRoundingChange(value: RoundingMode) {
@@ -121,18 +131,34 @@ export const Dock = defineComponent<DockProps>({
 
     function onMinFontChange(event: Event) {
       const value = toNumber(event)
-      props.settings.fit.minFontPx = value
-      if (props.settings.fit.maxFontPx < value) {
-        props.settings.fit.maxFontPx = value
+      if (!Number.isFinite(value)) return
+      props.settings.fit.minFontPx = clamp(value, FONT_MIN_PX, FONT_MAX_PX)
+      echo(event, props.settings.fit.minFontPx)
+      if (props.settings.fit.maxFontPx < props.settings.fit.minFontPx) {
+        props.settings.fit.maxFontPx = props.settings.fit.minFontPx
       }
     }
 
     function onMaxFontChange(event: Event) {
       const value = toNumber(event)
-      props.settings.fit.maxFontPx = Math.max(
+      if (!Number.isFinite(value)) return
+      props.settings.fit.maxFontPx = clamp(
         value,
-        props.settings.fit.minFontPx
+        props.settings.fit.minFontPx,
+        FONT_MAX_PX
       )
+      echo(event, props.settings.fit.maxFontPx)
+    }
+
+    function onExactPagesChange(event: Event) {
+      const value = toNumber(event)
+      if (!Number.isFinite(value)) return
+      props.settings.fit.exactPages = clamp(
+        Math.floor(value),
+        1,
+        EXACT_PAGES_MAX
+      )
+      echo(event, props.settings.fit.exactPages)
     }
 
     return () => {
@@ -203,12 +229,10 @@ export const Dock = defineComponent<DockProps>({
                   class="dock-exact-input"
                   aria-label="Exact page count"
                   min={1}
-                  max={999}
+                  max={EXACT_PAGES_MAX}
                   disabled={!exact}
                   value={settings.fit.exactPages}
-                  onInput={(event) => {
-                    settings.fit.exactPages = toNumber(event)
-                  }}
+                  onInput={onExactPagesChange}
                 />
               </span>
             ),
@@ -223,8 +247,8 @@ export const Dock = defineComponent<DockProps>({
                 aria-label="Minimum font size in pixels"
                 title={`${minFontPt} pt`}
                 step={0.5}
-                min={6}
-                max={16}
+                min={FONT_MIN_PX}
+                max={FONT_MAX_PX}
                 value={settings.fit.minFontPx}
                 onInput={onMinFontChange}
               />
@@ -234,8 +258,8 @@ export const Dock = defineComponent<DockProps>({
                 class="dock-number"
                 aria-label="Base font size in pixels"
                 step={0.5}
-                min={10}
-                max={24}
+                min={FONT_MIN_PX}
+                max={FONT_MAX_PX}
                 value={settings.fit.maxFontPx}
                 onInput={onMaxFontChange}
               />
