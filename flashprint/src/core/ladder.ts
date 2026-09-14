@@ -4,10 +4,10 @@ import type { Compaction } from './types'
 /// setting, `LADDER_STEPS` is the tightest.
 export const LADDER_STEPS = 48
 
-/// Fraction of the ladder that tightens spacing before the font shrinks.
+// Fraction of the ladder that tightens spacing before the font shrinks.
 const SPACING_PHASE = 0.25
 
-/// The ladder relaxes fragmentation rules from this fraction on.
+// The ladder relaxes fragmentation rules from this fraction on.
 const RELAX_BREAKS_FROM = 0.5
 
 const LINE_HEIGHT = { start: 1.5, mid: 1.3, end: 1.2 }
@@ -20,8 +20,8 @@ function lerp(from: number, to: number, t: number): number {
   return from + (to - from) * t
 }
 
-/// Round hard enough that the two phases agree on their shared endpoint.
-/// Without it a float remainder makes a field grow by 1e-17 at the seam.
+// Round hard enough that the two phases agree on their shared endpoint.
+// Without it a float remainder makes a field grow by 1e-17 at the seam.
 function round4(value: number): number {
   return Math.round(value * 10000) / 10000
 }

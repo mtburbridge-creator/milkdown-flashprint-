@@ -4,10 +4,13 @@ import { editorViewCtx, schemaCtx } from '@milkdown/kit/core'
 import { DOMSerializer } from '@milkdown/kit/prose/model'
 import katex from 'katex'
 
-/// Attributes the editor needs and the print document does not.
+// Attributes the editor needs and the print document does not.
 const EDITOR_ATTRIBUTES = ['contenteditable', 'draggable']
 
-/// List attributes that only drive the editor view.
+// Classes the editor view adds to its own DOM.
+const EDITOR_CLASS_PREFIX = 'ProseMirror'
+
+// List attributes that only drive the editor view.
 const LIST_ATTRIBUTES = ['data-label', 'data-list-type', 'data-spread']
 
 function replaceLatexBlocks(root: HTMLElement): void {
@@ -65,12 +68,18 @@ function cleanListItems(root: HTMLElement): void {
   }
 }
 
+function stripElement(el: Element): void {
+  for (const name of EDITOR_ATTRIBUTES) el.removeAttribute(name)
+
+  // `classList` is live, so read the names before the loop removes any.
+  const names = el.getAttribute('class')?.split(/\s+/) ?? []
+  for (const name of names)
+    if (name.startsWith(EDITOR_CLASS_PREFIX)) el.classList.remove(name)
+}
+
 function stripEditorMarkup(root: HTMLElement): void {
-  for (const el of [root, ...root.querySelectorAll('*')]) {
-    for (const name of EDITOR_ATTRIBUTES) el.removeAttribute(name)
-    for (const name of [...el.classList])
-      if (name.startsWith('ProseMirror')) el.classList.remove(name)
-  }
+  stripElement(root)
+  for (const el of root.querySelectorAll('*')) stripElement(el)
 }
 
 function removeTrailingParagraph(root: HTMLElement): void {

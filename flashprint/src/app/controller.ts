@@ -10,17 +10,15 @@ import {
   resolvePageBox,
 } from '../core'
 
-export interface RefitTargets {
-  /// Container that shows the scaled preview sheets on screen.
-  preview: HTMLElement
-  /// Container Chromium prints from. Holds unscaled sheets.
-  printRoot: HTMLElement
-}
-
 export interface RefitDeps {
   getEditor: () => Editor | null
   getSettings: () => Settings
-  targets: RefitTargets
+  /// The raw print root element Chromium prints from. Not part of the
+  /// Vue tree, so the controller replaces its contents directly.
+  printRoot: HTMLElement
+  /// Hands the freshly built preview sheets to the caller, which puts
+  /// them wherever Vue renders the preview pane.
+  onPreviewSheets: (sheets: HTMLElement) => void
 }
 
 export interface RefitController {
@@ -54,8 +52,8 @@ export function createRefitController(deps: RefitDeps): RefitController {
       result.pages,
       settings.page
     )
-    deps.targets.preview.replaceChildren(previewSheets)
-    deps.targets.printRoot.replaceChildren(printSheets)
+    deps.onPreviewSheets(previewSheets)
+    deps.printRoot.replaceChildren(printSheets)
 
     return result
   }

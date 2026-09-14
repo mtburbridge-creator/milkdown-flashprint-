@@ -1,10 +1,10 @@
-import { defineComponent, h } from 'vue'
+import { defineComponent } from 'vue'
 
 import type { PaperName, RoundingMode } from '../core/types'
-import type { TouchedFields } from './state'
+import type { Settings, TouchedFields } from './state'
 
 import { PAPERS } from '../core'
-import { applyLayoutSuggestions, type Settings } from './state'
+import { applyLayoutSuggestions } from './state'
 
 interface ControlsProps {
   settings: Settings
@@ -193,9 +193,9 @@ export const Controls = defineComponent<ControlsProps>({
           </label>
 
           <p class="controls-tips">
-            In the print dialog choose Landscape (or Portrait for one page
-            per sheet), Margins: None, Scale: 100%, and turn off headers
-            and footers. Page size is set by the app.
+            In the print dialog choose Landscape (or Portrait for one page per
+            sheet), Margins: None, Scale: 100%, and turn off headers and
+            footers. Page size is set by the app.
           </p>
         </form>
       )
