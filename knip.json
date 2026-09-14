@@ -6,6 +6,9 @@
     },
     "packages/plugins/theme-nord": {
       "ignoreDependencies": ["@milkdown/prose"]
+    },
+    "flashprint": {
+      "entry": ["src/main.ts", "tests/**/*.ts"]
     }
   }
 }
