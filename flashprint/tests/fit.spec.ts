@@ -261,3 +261,181 @@ test('a very long document is capped instead of freezing the tab', async ({
   const clear = page.getByRole('button', { name: 'Clear' })
   await clear.click({ timeout: 5000 })
 })
+
+const VIEW_DOC = [
+  '# Quarterly report',
+  '',
+  'This paragraph has **bold text** and a [link](https://example.com).',
+  '',
+  '> A quoted remark about the numbers.',
+  '',
+  'A plain paragraph well away from the first one.',
+  '',
+].join('\n')
+
+async function openWith(page: Page, markdown: string) {
+  await page.addInitScript((md: string) => {
+    localStorage.setItem('flashprint:markdown', md)
+  }, markdown)
+  await page.goto('.')
+  return waitForFit(page)
+}
+
+function viewButton(page: Page, label: string) {
+  return page.getByRole('button', { name: label, exact: true })
+}
+
+function paragraph(page: Page, text: string) {
+  return page.locator('.fp-editor .ProseMirror p', { hasText: text })
+}
+
+test('the markdown view round-trips the document unchanged', async ({
+  page,
+}) => {
+  await openWith(page, VIEW_DOC)
+  const source = page.locator('textarea.markdown-source')
+
+  await viewButton(page, 'Markdown').click()
+  const shown = await source.inputValue()
+  expect(shown).toContain('# Quarterly report')
+  expect(shown).toContain('**bold text**')
+  expect(shown).toContain('[link](https://example.com)')
+  expect(shown).toContain('> A quoted remark about the numbers.')
+
+  await viewButton(page, 'Formatted').click()
+  await expect(source).toHaveCount(0)
+  await viewButton(page, 'Markdown').click()
+  expect(await source.inputValue()).toBe(shown)
+})
+
+test('an edit in the markdown view updates the page preview', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'flashprint:settings',
+      JSON.stringify({ fit: { rounding: 'none' } })
+    )
+  })
+  const before = await openWith(page, VIEW_DOC)
+
+  await viewButton(page, 'Markdown').click()
+  await page.locator('textarea.markdown-source').fill(longMarkdown(14))
+  await expect
+    .poll(
+      async () => {
+        const status = await page.locator('.status-line').innerText()
+        return Number(STATUS.exec(status)?.[1] ?? 0)
+      },
+      { timeout: 30_000 }
+    )
+    .toBeGreaterThan(before.pages)
+})
+
+test('the chosen view survives a reload', async ({ page }) => {
+  await openWith(page, VIEW_DOC)
+  await viewButton(page, 'Live').click()
+  await expect(viewButton(page, 'Live')).toHaveAttribute('aria-pressed', 'true')
+
+  await page.reload()
+  await waitForFit(page)
+  await expect(viewButton(page, 'Live')).toHaveAttribute('aria-pressed', 'true')
+  const stored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('flashprint:settings') ?? '{}')
+  )
+  expect(stored.editor.view).toBe('live')
+})
+
+test('the live view reveals syntax only in the block with the cursor', async ({
+  page,
+}) => {
+  await openWith(page, VIEW_DOC)
+  await expect(page.locator('.fp-syntax')).toHaveCount(0)
+
+  await viewButton(page, 'Live').click()
+  const withCursor = paragraph(page, 'This paragraph has')
+  const elsewhere = paragraph(page, 'A plain paragraph')
+  await withCursor.click()
+  // Two markers for the bold run, two for the link.
+  await expect(withCursor.locator('.fp-syntax')).toHaveCount(4)
+  await expect(withCursor).toContainText('**bold text**')
+  await expect(withCursor).toContainText('[link](https://example.com)')
+  await expect(elsewhere.locator('.fp-syntax')).toHaveCount(0)
+
+  await elsewhere.click()
+  await expect(withCursor.locator('.fp-syntax')).toHaveCount(0)
+
+  await viewButton(page, 'Formatted').click()
+  await expect(page.locator('.fp-syntax')).toHaveCount(0)
+})
+
+test('copying puts markdown on the clipboard and nothing else', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  const markdown = [
+    '- Breast: `carcinoma of the left breast, grade 2` and **bold**',
+    '- Colon: `adenocarcinoma of the sigmoid colon` with *emphasis*',
+    '',
+    '# A heading',
+  ].join('\n')
+  await page.addInitScript((md: string) => {
+    localStorage.setItem('flashprint:markdown', md)
+  }, markdown)
+  await page.goto('.')
+  await waitForFit(page)
+
+  await page.click('.fp-editor .ProseMirror')
+  await page.keyboard.press('Control+a')
+  await page.keyboard.press('Control+c')
+
+  const clip = await page.evaluate(async () => {
+    const items = await navigator.clipboard.read()
+    const types: string[] = []
+    let plain = ''
+    for (const item of items) {
+      types.push(...item.types)
+      if (item.types.includes('text/plain'))
+        plain = await (await item.getType('text/plain')).text()
+    }
+    return { types, plain }
+  })
+
+  // A target that accepts rich text would prefer `text/html` and derive
+  // its own escaped markdown from it, so that flavour must be absent.
+  expect(clip.types).toEqual(['text/plain'])
+  expect(clip.plain).not.toMatch(/\\[`\-*~[\]]/)
+  expect(clip.plain).toContain('`carcinoma of the left breast, grade 2`')
+  expect(clip.plain).toContain('**bold**')
+  expect(clip.plain).toContain('# A heading')
+  expect(clip.plain.endsWith('\n')).toBe(false)
+})
+
+test('copying part of a line keeps its markers and adds none', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.addInitScript(() => {
+    localStorage.setItem('flashprint:markdown', '- an item with **bold** here')
+  })
+  await page.goto('.')
+  await waitForFit(page)
+
+  await page.evaluate(() => {
+    const strong = document.querySelector('.fp-editor .ProseMirror strong')
+    if (!strong) throw new Error('no bold text to select')
+    const range = document.createRange()
+    range.selectNodeContents(strong)
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+  })
+  await page.keyboard.press('Control+c')
+
+  // The list bullet was never selected, so it must not be copied.
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    '**bold**'
+  )
+})

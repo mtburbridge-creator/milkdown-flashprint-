@@ -15,6 +15,11 @@
   --fp-paper: #f1e7d3;
   --fp-sheet: #f7f1e3;
   --fp-ink: #2a2420;
+  --fp-syntax: #b3a894;
+  /* The Crepe code font is declared on `.milkdown`. The markdown text
+     area sits outside it and needs its own copy. */
+  --fp-font-code:
+    'Space Mono', Fira Code, Menlo, Monaco, 'Courier New', Courier, monospace;
 }
 
 /* The design states content box sizes. A dock cell width below adds
@@ -56,6 +61,7 @@ body {
 }
 
 .top-bar :focus-visible,
+.view-strip :focus-visible,
 .dock :focus-visible {
   outline: 2px solid var(--fp-text-bright);
   outline-offset: 2px;
@@ -178,8 +184,57 @@ body {
 .editor-pane {
   flex: 0 0 55%;
   min-width: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--fp-paper);
+}
+
+.view-strip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--fp-border);
+  background: var(--fp-bg-raised);
+}
+
+.view-strip .dock-segment {
+  padding: 3px 10px;
+}
+
+.editor-surface {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.markdown-source {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 48px 80px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: var(--fp-paper);
+  color: var(--fp-ink);
+  font-family: var(--fp-font-code);
+  font-size: 14px;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+/* The syntax markers are widget decorations. They must not take the
+   caret, and they must read as a hint beside the formatted text. */
+.fp-syntax {
+  color: var(--fp-syntax);
+  font-family: var(--crepe-font-code);
+  opacity: 1;
+  user-select: none;
 }
 
 .fp-editor .milkdown {

@@ -4,6 +4,7 @@ import { Fragment, Schema, Slice } from '@milkdown/kit/prose/model'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  inlineContentOf,
   isUnmarkedText,
   sliceToMarkdown,
   trimOneTrailingNewline,
@@ -163,5 +164,45 @@ describe('sliceToMarkdown', () => {
       expect(sliceToMarkdown(slice, schema, serializer)).toBe('**bold run**')
       expect(serializer).toHaveBeenCalledOnce()
     })
+  })
+})
+
+describe('inlineContentOf', () => {
+  it('ignores a slice with closed ends', () => {
+    const slice = sliceOf(node('paragraph', text('plain')))
+    expect(inlineContentOf(slice)).toBeNull()
+  })
+
+  it('unwraps the blocks around an inline selection', () => {
+    const inner = node('paragraph', text('bold run', true))
+    const slice = new Slice(Fragment.from(inner), 1, 1)
+    const inline = inlineContentOf(slice)
+    expect(inline?.childCount).toBe(1)
+    expect(inline?.child(0).text).toBe('bold run')
+  })
+
+  it('ignores a selection that spans whole blocks', () => {
+    const slice = new Slice(
+      Fragment.from([
+        node('paragraph', text('one')),
+        node('paragraph', text('two')),
+      ]),
+      1,
+      1
+    )
+    expect(inlineContentOf(slice)).toBeNull()
+  })
+})
+
+describe('sliceToMarkdown on a partial inline selection', () => {
+  it('drops the wrappers so no unselected marker appears', () => {
+    const serializer = vi.fn((n: Node) => `${n.textContent}!\n`)
+    const inner = node('paragraph', text('bold run', true))
+    const slice = new Slice(Fragment.from(inner), 1, 1)
+
+    expect(sliceToMarkdown(slice, schema, serializer)).toBe('bold run!')
+    const served = serializer.mock.calls[0]?.[0]
+    expect(served?.childCount).toBe(1)
+    expect(served?.child(0).type.name).toBe('paragraph')
   })
 })

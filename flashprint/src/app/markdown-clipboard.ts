@@ -1,9 +1,10 @@
 import type { Ctx, MilkdownPlugin } from '@milkdown/kit/ctx'
-import type { Fragment, Schema, Slice } from '@milkdown/kit/prose/model'
+import type { Schema, Slice } from '@milkdown/kit/prose/model'
 import type { EditorView } from '@milkdown/kit/prose/view'
 import type { Serializer } from '@milkdown/kit/transformer'
 
 import { schemaCtx, serializerCtx } from '@milkdown/kit/core'
+import { Fragment } from '@milkdown/kit/prose/model'
 import { Plugin, PluginKey } from '@milkdown/kit/prose/state'
 import { $prose } from '@milkdown/kit/utils'
 
@@ -49,6 +50,41 @@ function serializeAsDocument(
   return serializer(doc)
 }
 
+/// Reduce a slice that holds inline content alone to that content.
+/// A selection inside a list item carries its wrappers. Serializing those
+/// would add a bullet the person never selected.
+export function inlineContentOf(slice: Slice): Fragment | null {
+  if (slice.openStart === 0 || slice.openEnd === 0) return null
+
+  let fragment = slice.content
+  while (fragment.childCount === 1) {
+    const child = fragment.firstChild
+    if (!child || child.isInline) break
+    fragment = child.content
+  }
+
+  if (fragment.childCount === 0) return null
+  for (let index = 0; index < fragment.childCount; index += 1)
+    if (!fragment.child(index).isInline) return null
+
+  return fragment
+}
+
+function serializeInline(
+  content: Fragment,
+  schema: Schema,
+  serializer: Serializer
+): string | null {
+  const paragraph = schema.nodes['paragraph']
+  if (!paragraph) return null
+
+  return serializeAsDocument(
+    Fragment.from(paragraph.create(undefined, content)),
+    schema,
+    serializer
+  )
+}
+
 /// Turn a selected slice into markdown.
 export function sliceToMarkdown(
   slice: Slice,
@@ -56,9 +92,11 @@ export function sliceToMarkdown(
   serializer: Serializer
 ): string {
   const { content } = slice
+  const inline = inlineContentOf(slice)
   const markdown = isUnmarkedText(content.toJSON())
     ? content.textBetween(0, content.size, '\n\n')
-    : serializeAsDocument(content, schema, serializer)
+    : ((inline && serializeInline(inline, schema, serializer)) ??
+      serializeAsDocument(content, schema, serializer))
 
   return trimOneTrailingNewline(markdown)
 }
