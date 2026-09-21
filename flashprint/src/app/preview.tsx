@@ -153,7 +153,7 @@ export const Preview = defineComponent({
                   width: `${rect.width * scale.value}px`,
                 }}
               >
-                Sheet {index + 1} of {total}
+                Side {index + 1} of {total}
               </div>
             ))}
           </div>

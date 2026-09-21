@@ -63,8 +63,11 @@ export interface Compaction {
 }
 
 export interface FitResult {
-  /// Page count at the chosen compaction.
+  /// Page count at the chosen compaction. One page is one printed face.
   pages: number
+  /// Printed sides the pages occupy. A two-up side carries two pages.
+  sides: number
+  /// Sheets of paper the sides occupy, printing both sides of each.
   sheets: number
   /// Page count at level 0, before compaction.
   naturalPages: number

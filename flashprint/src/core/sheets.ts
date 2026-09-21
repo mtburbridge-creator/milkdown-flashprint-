@@ -1,6 +1,6 @@
 import type { PageBox, PageSettings } from './types'
 
-import { sheetsFor } from './paper'
+import { sidesFor } from './paper'
 
 /// Options for the sheet builders.
 export interface SheetOptions {
@@ -67,7 +67,8 @@ interface SheetPlan {
   /// Pages that get a clone. Page numbers still count to `total`.
   rendered: number
   total: number
-  sheets: number
+  /// Printed sides to build. One `.fp-sheet` element is one side.
+  sides: number
 }
 
 function planSheets(
@@ -83,20 +84,21 @@ function planSheets(
 
   const total = Math.max(1, Math.floor(pages))
   const rendered = Math.min(total, Math.max(1, options.maxPages ?? total))
-  return { root, rendered, total, sheets: sheetsFor(rendered, box) }
+  return { root, rendered, total, sides: sidesFor(rendered, box) }
 }
 
-function appendSheet(
+/// Build one printed side. It carries `pagesPerSheet` pages.
+function appendSide(
   plan: SheetPlan,
   doc: HTMLElement,
   box: PageBox,
-  sheet: number,
+  side: number,
   settings: PageSettings
 ): void {
   const element = document.createElement('div')
   element.className = 'fp-sheet'
   for (let slot = 0; slot < box.pagesPerSheet; slot += 1) {
-    const index = sheet * box.pagesPerSheet + slot
+    const index = side * box.pagesPerSheet + slot
     const pages = index < plan.rendered ? plan.total : 0
     element.appendChild(buildPage(doc, box, index, pages, settings))
   }
@@ -113,8 +115,8 @@ export function buildSheets(
   options: SheetOptions = {}
 ): HTMLElement {
   const plan = planSheets(box, pages, settings, options)
-  for (let sheet = 0; sheet < plan.sheets; sheet += 1)
-    appendSheet(plan, doc, box, sheet, settings)
+  for (let side = 0; side < plan.sides; side += 1)
+    appendSide(plan, doc, box, side, settings)
   return plan.root
 }
 
@@ -132,12 +134,12 @@ export async function buildSheetsAsync(
   const plan = planSheets(box, pages, settings, options)
   onRoot?.(plan.root)
   const chunk = Math.max(1, options.chunk ?? DEFAULT_CHUNK)
-  for (let sheet = 0; sheet < plan.sheets; sheet += 1) {
-    if (sheet > 0 && sheet % chunk === 0) {
+  for (let side = 0; side < plan.sides; side += 1) {
+    if (side > 0 && side % chunk === 0) {
       await new Promise((resolve) => setTimeout(resolve, 0))
       if (options.signal?.aborted) return null
     }
-    appendSheet(plan, doc, box, sheet, settings)
+    appendSide(plan, doc, box, side, settings)
   }
   return plan.root
 }

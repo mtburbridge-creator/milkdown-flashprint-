@@ -2,7 +2,7 @@ import type { FitResult, FitSettings, PageBox } from './types'
 
 import { applyCompaction, compactionAt, LADDER_STEPS } from './ladder'
 import { measurePages } from './measure'
-import { sheetsFor } from './paper'
+import { sheetsFor, sidesFor } from './paper'
 import { pickTarget } from './target'
 
 /// Counts the pages of a document at its current compaction.
@@ -99,9 +99,11 @@ function startFit(opts: FitOptions): FitRun {
   const finish = (outcome: SearchOutcome, timedOut: boolean): FitResult => {
     const compaction = compactionAt(outcome.level, fit)
     applyCompaction(doc, compaction)
+    const sides = sidesFor(outcome.pages, box)
     return {
       pages: outcome.pages,
-      sheets: sheetsFor(outcome.pages, box),
+      sides,
+      sheets: sheetsFor(sides),
       naturalPages,
       targetPages,
       reached: outcome.reached,
