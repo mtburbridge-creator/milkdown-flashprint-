@@ -11,7 +11,7 @@ import {
   watch,
 } from 'vue'
 
-import type { Settings } from './state'
+import type { Settings, ViewMode } from './state'
 
 import { resolvePageBox } from '../core'
 import {
@@ -21,6 +21,8 @@ import {
 } from './controller'
 import { debounce } from './debounce'
 import { Dock } from './dock'
+import { livePreview, setLivePreview } from './live-preview'
+import { markdownClipboard } from './markdown-clipboard'
 import { updatePageRule } from './page-rule'
 import { Preview } from './preview'
 import {
@@ -35,8 +37,10 @@ import {
   saveMarkdown,
   saveSettings,
 } from './state'
+import { ViewStrip } from './view-strip'
 
 const MARKDOWN_DEBOUNCE_MS = 250
+const SOURCE_DEBOUNCE_MS = 300
 const MARKDOWN_FILE_PATTERN = /\.(md|markdown|txt)$/i
 const CLIPBOARD_HINT_MS = 4000
 const CLIPBOARD_HINT = 'Press Ctrl+V inside the editor'
@@ -125,9 +129,12 @@ export const App = defineComponent({
     const clipboardHint = ref(false)
     const dragActive = ref(false)
     const fileName = ref('')
+    const markdownText = ref('')
+    const sourceView = computed(() => settings.editor.view === 'markdown')
 
     let crepe: Crepe | null = null
     let clipboardHintTimer: ReturnType<typeof setTimeout> | undefined
+    let sourcePushTimer: ReturnType<typeof setTimeout> | undefined
 
     const printRoot = getPrintRoot()
 
@@ -158,8 +165,40 @@ export const App = defineComponent({
       void refit()
     }, MARKDOWN_DEBOUNCE_MS)
 
+    function cancelSourcePush() {
+      if (sourcePushTimer !== undefined) clearTimeout(sourcePushTimer)
+      sourcePushTimer = undefined
+    }
+
     function replaceEditorContent(markdown: string) {
+      // A push in flight carries older text. Drop it, so it cannot
+      // overwrite the markdown that arrives here.
+      cancelSourcePush()
+      markdownText.value = markdown
       crepe?.editor.action(replaceAll(markdown))
+    }
+
+    /// Pushes the text area into the document after a pause in typing.
+    /// The text area is never written from `markdownUpdated`, so the
+    /// echo of this push cannot move the caret.
+    function onSourceInput(event: Event) {
+      const text = (event.target as HTMLTextAreaElement).value
+      markdownText.value = text
+      cancelSourcePush()
+      sourcePushTimer = setTimeout(() => {
+        sourcePushTimer = undefined
+        replaceEditorContent(text)
+      }, SOURCE_DEBOUNCE_MS)
+    }
+
+    function applyView(view: ViewMode) {
+      if (!crepe) return
+      setLivePreview(crepe.editor, view === 'live')
+      if (view === 'markdown') markdownText.value = crepe.getMarkdown()
+    }
+
+    function selectView(view: ViewMode) {
+      settings.editor.view = view
     }
 
     async function pasteMarkdown() {
@@ -236,12 +275,15 @@ export const App = defineComponent({
           [Crepe.Feature.TopBar]: false,
         },
       })
+      crepe.editor.use(markdownClipboard)
+      crepe.editor.use(livePreview)
       crepe.on((api) =>
         api.markdownUpdated((_ctx, markdown) => {
           debouncedMarkdownUpdate(markdown)
         })
       )
       await crepe.create()
+      applyView(settings.editor.view)
 
       // fitDocument measures against document fonts. Running before
       // they load would size the ladder against fallback metrics.
@@ -258,6 +300,7 @@ export const App = defineComponent({
       document.fonts.removeEventListener('loadingdone', onFontLoadingDone)
       window.removeEventListener('pagehide', markRefitFinished)
       if (clipboardHintTimer !== undefined) clearTimeout(clipboardHintTimer)
+      cancelSourcePush()
       void crepe?.destroy()
     })
 
@@ -266,10 +309,21 @@ export const App = defineComponent({
       () => {
         recoveryNotice.value = false
         saveSettings(settings)
+      },
+      { deep: true }
+    )
+
+    // The view mode leaves the document alone, so only the page and fit
+    // settings may queue a refit.
+    watch(
+      () => [settings.page, settings.fit],
+      () => {
         void refit()
       },
       { deep: true }
     )
+
+    watch(() => settings.editor.view, applyView)
 
     const statusText = computed(() => {
       if (recoveryNotice.value) return RECOVERY_NOTICE
@@ -357,7 +411,22 @@ export const App = defineComponent({
 
         <div class="body-split">
           <div class="editor-pane">
-            <div class="crepe fp-editor" ref={editorRootRef} />
+            <ViewStrip view={settings.editor.view} onSelect={selectView} />
+            <div
+              class="editor-surface"
+              style={{ display: sourceView.value ? 'none' : '' }}
+            >
+              <div class="crepe fp-editor" ref={editorRootRef} />
+            </div>
+            {sourceView.value && (
+              <textarea
+                class="markdown-source"
+                aria-label="Markdown source"
+                spellcheck={false}
+                value={markdownText.value}
+                onInput={onSourceInput}
+              />
+            )}
           </div>
           <div class="preview-pane-wrapper">
             <Preview sheets={previewSheets.value} />

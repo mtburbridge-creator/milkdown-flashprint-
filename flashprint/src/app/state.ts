@@ -20,9 +20,19 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
+/// How the editor pane shows the document. `formatted` is the Crepe
+/// WYSIWYG editor, `markdown` is the raw source, and `live` is the
+/// formatted text with the syntax of the current block revealed.
+export type ViewMode = 'formatted' | 'markdown' | 'live'
+
+export interface EditorSettings {
+  view: ViewMode
+}
+
 export interface Settings {
   page: PageSettings
   fit: FitSettings
+  editor: EditorSettings
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +47,9 @@ export const DEFAULT_SETTINGS: Settings = {
     exactPages: 4,
     minFontPx: 10,
     maxFontPx: 16,
+  },
+  editor: {
+    view: 'formatted',
   },
 }
 
@@ -89,6 +102,10 @@ function isRoundingMode(value: unknown): value is FitSettings['rounding'] {
   )
 }
 
+function isViewMode(value: unknown): value is ViewMode {
+  return value === 'formatted' || value === 'markdown' || value === 'live'
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -134,6 +151,15 @@ function readFitSettings(raw: unknown): FitSettings {
   }
 }
 
+function readEditorSettings(raw: unknown): EditorSettings {
+  const defaults = DEFAULT_SETTINGS.editor
+  if (typeof raw !== 'object' || raw === null) return { ...defaults }
+  const source = raw as Record<string, unknown>
+  return {
+    view: isViewMode(source['view']) ? source['view'] : defaults.view,
+  }
+}
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
@@ -142,6 +168,7 @@ export function loadSettings(): Settings {
     return {
       page: readPageSettings(parsed['page']),
       fit: readFitSettings(parsed['fit']),
+      editor: readEditorSettings(parsed['editor']),
     }
   } catch {
     return structuredClone(DEFAULT_SETTINGS)
