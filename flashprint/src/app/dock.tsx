@@ -1,9 +1,11 @@
 import { defineComponent, type VNode } from 'vue'
 
 import type { PaperName, RoundingMode } from '../core/types'
+import type { Segment } from './segmented'
 import type { Settings, TouchedFields } from './state'
 
 import { PAPERS } from '../core'
+import { segmentButtons, segmentClass } from './segmented'
 import {
   applyLayoutSuggestions,
   clamp,
@@ -17,11 +19,6 @@ import {
 interface DockProps {
   settings: Settings
   touched: TouchedFields
-}
-
-interface Segment<T extends string> {
-  value: T
-  label: string
 }
 
 /// One labelled segmented control. `extra` holds a trailing segment
@@ -75,10 +72,6 @@ function roundMargin(inches: number): number {
   return Math.round(inches * 100) / 100
 }
 
-function segmentClass(selected: boolean): string[] {
-  return selected ? ['dock-segment', 'is-selected'] : ['dock-segment']
-}
-
 function segmentedField<T extends string>(field: SegmentedField<T>): VNode {
   return (
     <div class="dock-field">
@@ -88,17 +81,7 @@ function segmentedField<T extends string>(field: SegmentedField<T>): VNode {
         role="group"
         aria-label={field.label}
       >
-        {field.segments.map((segment) => (
-          <button
-            type="button"
-            key={segment.value}
-            class={segmentClass(segment.value === field.selected)}
-            aria-pressed={segment.value === field.selected}
-            onClick={() => field.onSelect(segment.value)}
-          >
-            {segment.label}
-          </button>
-        ))}
+        {segmentButtons(field.segments, field.selected, field.onSelect)}
         {field.extra}
       </div>
     </div>
