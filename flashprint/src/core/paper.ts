@@ -45,7 +45,17 @@ export function resolvePageBox(settings: PageSettings): PageBox {
   }
 }
 
-/// How many sheets a page count needs in this layout.
-export function sheetsFor(pages: number, box: PageBox): number {
+/// Printed sides a duplex printer puts on one sheet of paper.
+export const SIDES_PER_SHEET = 2
+
+/// How many printed sides a page count needs in this layout. One side
+/// carries `pagesPerSheet` pages, so a two-up side holds two of them.
+export function sidesFor(pages: number, box: PageBox): number {
   return Math.ceil(pages / box.pagesPerSheet)
+}
+
+/// How many sheets of paper a side count needs. The app assumes duplex
+/// printing, so two sides share one sheet.
+export function sheetsFor(sides: number): number {
+  return Math.ceil(sides / SIDES_PER_SHEET)
 }

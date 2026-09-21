@@ -11,6 +11,7 @@ import {
   watch,
 } from 'vue'
 
+import type { FitResult } from '../core/types'
 import type { Settings, ViewMode } from './state'
 
 import { resolvePageBox } from '../core'
@@ -45,6 +46,11 @@ const MARKDOWN_FILE_PATTERN = /\.(md|markdown|txt)$/i
 const CLIPBOARD_HINT_MS = 4000
 const CLIPBOARD_HINT = 'Press Ctrl+V inside the editor'
 const STATUS_SEPARATOR = ' · '
+const SEGMENT_CLASS = {
+  plain: undefined,
+  strong: 'status-strong',
+  muted: 'status-tail',
+} as const
 const PRINT_TIPS =
   'In the print dialog choose Landscape (or Portrait for one page per ' +
   'sheet), Margins: None, Scale: 100%, and turn off headers and footers. ' +
@@ -69,34 +75,65 @@ function count(n: number, noun: string): string {
 const RECOVERY_NOTICE =
   'The last fit never finished, so the fit settings were reset'
 
-function formatStatus(outcome: RefitOutcome, rounding: string): string {
+/// One run of status text. `strong` marks the sheet count, the figure
+/// that says how much paper the print costs. `muted` dims the type
+/// figures, which matter less than the tally.
+export interface StatusSegment {
+  text: string
+  kind: 'plain' | 'strong' | 'muted'
+}
+
+/// The paper tally: faces are printed pages, sides are printed sheet
+/// faces, and sheets are pieces of paper with both sides used.
+function tally(result: FitResult): StatusSegment[] {
+  return [
+    { text: `${count(result.pages, 'face')} / `, kind: 'plain' },
+    { text: `${count(result.sides, 'side')} / `, kind: 'plain' },
+    { text: count(result.sheets, 'sheet'), kind: 'strong' },
+  ]
+}
+
+function plain(text: string): StatusSegment[] {
+  return [{ text, kind: 'plain' }]
+}
+
+export function formatStatus(
+  outcome: RefitOutcome,
+  rounding: string
+): StatusSegment[] {
   const result = outcome.fit
-  const pages = count(result.pages, 'page')
-  const sheets = count(result.sheets, 'sheet')
+  const faces = count(result.pages, 'face')
   if (outcome.renderedPages < result.pages) {
-    return (
-      `${pages}; only the first ${outcome.renderedPages} are shown and ` +
-      'printed. Shorten the document or lower the font'
+    return plain(
+      `${faces}; only the first ${outcome.renderedPages} are shown and ` +
+        'printed. Shorten the document or lower the font'
     )
   }
   if (result.timedOut) {
-    return (
-      `Fit stopped after ${FIT_BUDGET_MS / 1000} s at ${pages}; ` +
-      'shorten the document or lower the font'
+    return plain(
+      `Fit stopped after ${FIT_BUDGET_MS / 1000} s at ${faces}; ` +
+        'shorten the document or lower the font'
+    )
+  }
+  if (!result.reached) {
+    return plain(
+      `Could not reach ${result.targetPages ?? result.pages} faces at ` +
+        `the minimum font size; printing ${faces}`
     )
   }
   if (rounding === 'none') {
-    return `${pages} on ${sheets} at default size`
+    return [...tally(result), { text: ' at default size', kind: 'plain' }]
   }
-  if (!result.reached) {
-    return (
-      `Could not reach ${result.targetPages ?? result.pages} pages at ` +
-      `the minimum font size; printing ${result.pages} pages`
-    )
-  }
+
   const fontPx = result.compaction.fontPx.toFixed(1)
   const lineHeight = result.compaction.lineHeight.toFixed(1)
-  return `${pages} on ${sheets} · font ${fontPx}px · line ${lineHeight}`
+  return [
+    ...tally(result),
+    {
+      text: `${STATUS_SEPARATOR}font ${fontPx}px${STATUS_SEPARATOR}line ${lineHeight}`,
+      kind: 'muted',
+    },
+  ]
 }
 
 /// Settings to start from. When the last refit never finished, the fit
@@ -325,10 +362,11 @@ export const App = defineComponent({
 
     watch(() => settings.editor.view, applyView)
 
-    const statusText = computed(() => {
-      if (recoveryNotice.value) return RECOVERY_NOTICE
+    const statusSegments = computed<StatusSegment[]>(() => {
+      if (clipboardHint.value) return plain(CLIPBOARD_HINT)
+      if (recoveryNotice.value) return plain(RECOVERY_NOTICE)
       const result = fitResult.value
-      if (!result) return ''
+      if (!result) return []
       return formatStatus(result, settings.fit.rounding)
     })
 
@@ -341,15 +379,6 @@ export const App = defineComponent({
         outcome.fit.timedOut ||
         outcome.renderedPages < outcome.fit.pages
       )
-    })
-
-    /// Splits the status at its first separator. The tail carries the
-    /// font and line figures, which the pill shows in a muted color.
-    const statusParts = computed(() => {
-      const text = clipboardHint.value ? CLIPBOARD_HINT : statusText.value
-      const separator = text.indexOf(STATUS_SEPARATOR)
-      if (separator < 0) return { head: text, tail: '' }
-      return { head: text.slice(0, separator), tail: text.slice(separator) }
     })
 
     return () => (
@@ -368,17 +397,18 @@ export const App = defineComponent({
             class={[
               'status-line',
               statusWarning.value && 'status-warning',
-              !statusParts.value.head && 'is-empty',
+              statusSegments.value.length === 0 && 'is-empty',
             ]}
           >
             <span class="status-dot" />
             {/* The pill is a flex box, so every child is a block. One
                 span keeps the whole status on one innerText line. */}
             <span>
-              {statusParts.value.head}
-              {statusParts.value.tail && (
-                <span class="status-tail">{statusParts.value.tail}</span>
-              )}
+              {statusSegments.value.map((segment, index) => (
+                <span key={index} class={SEGMENT_CLASS[segment.kind]}>
+                  {segment.text}
+                </span>
+              ))}
             </span>
           </div>
           <div class="top-bar-actions">

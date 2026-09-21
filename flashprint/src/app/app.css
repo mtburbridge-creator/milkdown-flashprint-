@@ -130,6 +130,11 @@ body {
   color: var(--fp-text-muted);
 }
 
+/* The sheet count says how much paper a print costs. */
+.status-strong {
+  font-weight: 700;
+}
+
 .status-line.status-warning {
   color: var(--fp-warning);
 }

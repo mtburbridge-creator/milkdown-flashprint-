@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolvePageBox, sheetsFor } from './paper'
+import { resolvePageBox, sheetsFor, sidesFor } from './paper'
 
 describe('resolvePageBox', () => {
   it('splits a landscape letter sheet into two portrait pages', () => {
@@ -38,7 +38,7 @@ describe('resolvePageBox', () => {
   })
 })
 
-describe('sheetsFor', () => {
+describe('sidesFor', () => {
   const twoUp = resolvePageBox({
     paper: 'a4',
     layout: 'two-up',
@@ -52,12 +52,23 @@ describe('sheetsFor', () => {
     pageNumbers: false,
   })
 
-  it('pairs pages on a two-up sheet and rounds up', () => {
-    expect(sheetsFor(4, twoUp)).toBe(2)
-    expect(sheetsFor(5, twoUp)).toBe(3)
+  it('pairs pages on a two-up side and rounds up', () => {
+    expect(sidesFor(4, twoUp)).toBe(2)
+    expect(sidesFor(5, twoUp)).toBe(3)
   })
 
-  it('gives every page its own single sheet', () => {
-    expect(sheetsFor(5, single)).toBe(5)
+  it('gives every page its own side in the single layout', () => {
+    expect(sidesFor(5, single)).toBe(5)
+  })
+})
+
+describe('sheetsFor', () => {
+  it('prints two sides on one sheet of paper', () => {
+    expect(sheetsFor(4)).toBe(2)
+    expect(sheetsFor(1)).toBe(1)
+  })
+
+  it('rounds an odd side count up to a whole sheet', () => {
+    expect(sheetsFor(5)).toBe(3)
   })
 })

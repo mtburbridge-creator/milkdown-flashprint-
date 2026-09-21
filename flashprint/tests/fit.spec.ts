@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { countPdfPages } from './pdf'
 
 const STATUS =
-  /(\d+) pages? on (\d+) sheets?(?: · font ([\d.]+)px · line ([\d.]+))?/
+  /(\d+) faces? \/ (\d+) sides? \/ (\d+) sheets?(?: · font ([\d.]+)px · line ([\d.]+))?/
 
 async function waitForFit(page: Page) {
   await page.waitForSelector('#fp-print-root .fp-sheet', { state: 'attached' })
@@ -11,9 +11,10 @@ async function waitForFit(page: Page) {
   const status = await page.locator('.status-line').innerText()
   const match = STATUS.exec(status)
   expect(match, status).not.toBeNull()
-  const [, pages, sheets, font, line] = match!
+  const [, pages, sides, sheets, font, line] = match!
   return {
     pages: Number(pages),
+    sides: Number(sides),
     sheets: Number(sheets),
     font: font === undefined ? 16 : Number(font),
     line: line === undefined ? 1.5 : Number(line),
@@ -25,8 +26,9 @@ async function waitForFit(page: Page) {
 /// rendered page must still hold document content.
 async function expectPrintMatchesPreview(page: Page) {
   const status = await waitForFit(page)
-  const sheets = await page.locator('#fp-print-root .fp-sheet').count()
-  expect(sheets).toBe(status.sheets)
+  // One `.fp-sheet` element is one printed side.
+  const sides = await page.locator('#fp-print-root .fp-sheet').count()
+  expect(sides).toBe(status.sides)
 
   const lastPageHasContent = await page.evaluate(() => {
     const root = document.querySelector('#fp-print-root')
@@ -55,7 +57,7 @@ async function expectPrintMatchesPreview(page: Page) {
   await page.emulateMedia({ media: 'print' })
   const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true })
   await page.emulateMedia({ media: 'screen' })
-  expect(countPdfPages(pdf)).toBe(sheets)
+  expect(countPdfPages(pdf)).toBe(sides)
   return status
 }
 
@@ -133,7 +135,7 @@ test('single layout prints one page per sheet', async ({ page }) => {
   }, longMarkdown(6))
   await page.goto('.')
   const status = await expectPrintMatchesPreview(page)
-  expect(status.pages).toBe(status.sheets)
+  expect(status.pages).toBe(status.sides)
   expect(status.pages % 2).toBe(0)
 })
 
@@ -437,5 +439,55 @@ test('copying part of a line keeps its markers and adds none', async ({
   // The list bullet was never selected, so it must not be copied.
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
     '**bold**'
+  )
+})
+
+test('the status counts faces, sides and sheets with sheets in bold', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'flashprint:settings',
+      JSON.stringify({
+        page: { layout: 'two-up', paper: 'letter', marginIn: 0.5 },
+        fit: { rounding: 'none' },
+      })
+    )
+  })
+  await page.goto('.')
+  const status = await waitForFit(page)
+
+  // Two pages share a side, and a duplex print puts two sides on a sheet.
+  expect(status.sides).toBe(Math.ceil(status.pages / 2))
+  expect(status.sheets).toBe(Math.ceil(status.sides / 2))
+
+  const text = await page.locator('.status-line').innerText()
+  expect(text).toContain(
+    `${status.pages} faces / ${status.sides} sides / ${status.sheets} sheet`
+  )
+
+  // The sheet count carries the bold, because it is the paper cost.
+  const strong = page.locator('.status-line .status-strong')
+  await expect(strong).toHaveText(/^\d+ sheets?$/)
+  expect(await strong.evaluate((el) => getComputedStyle(el).fontWeight)).toBe(
+    '700'
+  )
+})
+
+test('the status uses the singular for a one sheet print', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('flashprint:markdown', '# Just a title\n')
+    localStorage.setItem(
+      'flashprint:settings',
+      JSON.stringify({
+        page: { layout: 'two-up' },
+        fit: { rounding: 'none' },
+      })
+    )
+  })
+  await page.goto('.')
+  await waitForFit(page)
+  expect(await page.locator('.status-line').innerText()).toContain(
+    '1 face / 1 side / 1 sheet'
   )
 })
