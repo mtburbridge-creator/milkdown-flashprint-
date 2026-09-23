@@ -14,9 +14,11 @@ import {
 } from 'vue'
 
 import type { FitResult } from '../core/types'
+import type { FindTarget } from './find-replace'
 import type { Settings, ViewMode } from './state'
 
 import { resolvePageBox } from '../core'
+import { blockMoves } from './block-moves'
 import {
   createRefitController,
   FIT_BUDGET_MS,
@@ -24,11 +26,24 @@ import {
 } from './controller'
 import { debounce } from './debounce'
 import { Dock } from './dock'
+import { FindBar } from './find-bar'
+import {
+  editorFindTarget,
+  findReplace,
+  textareaFindTarget,
+} from './find-replace'
+import { highlightMark } from './highlight-mark'
+import { linkShortcut } from './link-shortcut'
 import { livePreview, setLivePreview } from './live-preview'
 import { markdownClipboard } from './markdown-clipboard'
 import { updatePageRule } from './page-rule'
 import { Preview } from './preview'
-import { formatShortcut, hasModKey, ShortcutsPanel } from './shortcuts-panel'
+import {
+  formatShortcut,
+  hasModKey,
+  IS_MAC,
+  ShortcutsPanel,
+} from './shortcuts-panel'
 import {
   createTouchedFields,
   DEFAULT_SETTINGS,
@@ -42,6 +57,7 @@ import {
   saveMarkdown,
   saveSettings,
 } from './state'
+import { typography } from './typography'
 import { ViewStrip } from './view-strip'
 
 const MARKDOWN_DEBOUNCE_MS = 250
@@ -100,6 +116,19 @@ function downloadText(text: string, name: string) {
 
 function isSlashKey(event: KeyboardEvent): boolean {
   return event.key === '/' || event.code === 'Slash'
+}
+
+/// `Ctrl-h` on Windows and Linux, `Cmd-Option-f` on macOS. Option
+/// changes `event.key` on macOS, so the code decides there.
+function isFindReplaceKey(event: KeyboardEvent): boolean {
+  if (event.shiftKey) return false
+  if (IS_MAC) return event.altKey && event.code === 'KeyF'
+  return !event.altKey && event.key.toLowerCase() === 'h'
+}
+
+// CodeMirror binds `Mod-/` to toggle a comment in a code block.
+function isInCodeEditor(event: KeyboardEvent): boolean {
+  return event.target instanceof Element && !!event.target.closest('.cm-editor')
 }
 
 function count(n: number, noun: string): string {
@@ -204,6 +233,9 @@ export const App = defineComponent({
     const fileName = ref('')
     const markdownText = ref('')
     const shortcutsOpen = ref(false)
+    const findTarget = shallowRef<FindTarget | null>(null)
+    const findWithReplace = ref(false)
+    const findFocusSignal = ref(0)
     const sourceView = computed(() => settings.editor.view === 'markdown')
 
     let crepe: Crepe | null = null
@@ -255,14 +287,17 @@ export const App = defineComponent({
     /// Pushes the text area into the document after a pause in typing.
     /// The text area is never written from `markdownUpdated`, so the
     /// echo of this push cannot move the caret.
-    function onSourceInput(event: Event) {
-      const text = (event.target as HTMLTextAreaElement).value
+    function setSourceText(text: string) {
       markdownText.value = text
       cancelSourcePush()
       sourcePushTimer = setTimeout(() => {
         sourcePushTimer = undefined
         replaceEditorContent(text)
       }, SOURCE_DEBOUNCE_MS)
+    }
+
+    function onSourceInput(event: Event) {
+      setSourceText((event.target as HTMLTextAreaElement).value)
     }
 
     function flushSourcePush() {
@@ -324,6 +359,46 @@ export const App = defineComponent({
       shortcutsOpen.value = false
     }
 
+    /// A find target over the surface of the current view. The text area
+    /// exists only after the Markdown view renders.
+    function createFindTarget(): FindTarget | null {
+      if (!crepe) return null
+      if (!sourceView.value) return editorFindTarget(crepe.editor)
+      const textarea = sourceRef.value
+      return textarea ? textareaFindTarget(textarea, setSourceText) : null
+    }
+
+    function openFind(withReplace: boolean) {
+      if (withReplace) findWithReplace.value = true
+      if (findTarget.value) {
+        findFocusSignal.value += 1
+        return
+      }
+      findWithReplace.value = withReplace
+      findTarget.value = createFindTarget()
+    }
+
+    function closeFind() {
+      findTarget.value = null
+    }
+
+    /// The action of an app shortcut for a key pressed with `Mod`.
+    function shortcutAction(event: KeyboardEvent): (() => void) | null {
+      const key = event.key.toLowerCase()
+      if (isFindReplaceKey(event)) return () => openFind(true)
+      if (event.altKey) return null
+      if (isSlashKey(event)) return isInCodeEditor(event) ? null : openShortcuts
+      if (event.shiftKey) {
+        // Shift turns the key into `>` on many layouts, so match the code.
+        return event.code === 'Period' ? () => void cycleView() : null
+      }
+      if (key === 's') return saveMarkdownFile
+      if (key === 'f') return () => openFind(false)
+      return null
+    }
+
+    // The listener runs in the capture phase. CodeMirror in a code block
+    // binds `Mod-f` to its own search, and the app find must win there.
     function onWindowKeydown(event: KeyboardEvent) {
       const mod = hasModKey(event)
       if (shortcutsOpen.value) {
@@ -333,20 +408,11 @@ export const App = defineComponent({
         }
         return
       }
-      // A key the editor already handled, such as `Mod-/` in a code
-      // block, is not an app shortcut.
-      if (!mod || event.altKey || event.defaultPrevented) return
-      if (event.key.toLowerCase() === 's' && !event.shiftKey) {
-        event.preventDefault()
-        saveMarkdownFile()
-      } else if (event.code === 'Period' && event.shiftKey) {
-        // Shift turns the key into `>` on many layouts, so match the code.
-        event.preventDefault()
-        void cycleView()
-      } else if (isSlashKey(event)) {
-        event.preventDefault()
-        openShortcuts()
-      }
+      const action = mod ? shortcutAction(event) : null
+      if (!action) return
+      event.preventDefault()
+      event.stopPropagation()
+      action()
     }
 
     async function pasteMarkdown() {
@@ -423,8 +489,14 @@ export const App = defineComponent({
           [Crepe.Feature.TopBar]: false,
         },
       })
-      crepe.editor.use(markdownClipboard)
-      crepe.editor.use(livePreview)
+      crepe.editor
+        .use(markdownClipboard)
+        .use(livePreview)
+        .use(blockMoves)
+        .use(linkShortcut)
+        .use(typography)
+        .use(highlightMark)
+        .use(findReplace)
       crepe.on((api) =>
         api.markdownUpdated((_ctx, markdown) => {
           debouncedMarkdownUpdate(markdown)
@@ -432,7 +504,7 @@ export const App = defineComponent({
       )
       await crepe.create()
       applyView(settings.editor.view)
-      window.addEventListener('keydown', onWindowKeydown)
+      window.addEventListener('keydown', onWindowKeydown, true)
 
       // fitDocument measures against document fonts. Running before
       // they load would size the ladder against fallback metrics.
@@ -446,7 +518,7 @@ export const App = defineComponent({
     })
 
     onBeforeUnmount(() => {
-      window.removeEventListener('keydown', onWindowKeydown)
+      window.removeEventListener('keydown', onWindowKeydown, true)
       document.fonts.removeEventListener('loadingdone', onFontLoadingDone)
       window.removeEventListener('pagehide', markRefitFinished)
       if (clipboardHintTimer !== undefined) clearTimeout(clipboardHintTimer)
@@ -474,6 +546,16 @@ export const App = defineComponent({
     )
 
     watch(() => settings.editor.view, applyView)
+
+    // The find bar needs the surface of the new view, and the text area
+    // of the Markdown view exists only after the render.
+    watch(
+      () => settings.editor.view,
+      () => {
+        if (findTarget.value) findTarget.value = createFindTarget()
+      },
+      { flush: 'post' }
+    )
 
     const statusSegments = computed<StatusSegment[]>(() => {
       if (clipboardHint.value) return plain(CLIPBOARD_HINT)
@@ -562,23 +644,33 @@ export const App = defineComponent({
               onSelect={selectView}
               onShowShortcuts={openShortcuts}
             />
-            <div
-              ref={editorSurfaceRef}
-              class="editor-surface"
-              style={{ display: sourceView.value ? 'none' : '' }}
-            >
-              <div class="crepe fp-editor" ref={editorRootRef} />
+            <div class="editor-body">
+              <div
+                ref={editorSurfaceRef}
+                class="editor-surface"
+                style={{ display: sourceView.value ? 'none' : '' }}
+              >
+                <div class="crepe fp-editor" ref={editorRootRef} />
+              </div>
+              {sourceView.value && (
+                <textarea
+                  ref={sourceRef}
+                  class="markdown-source"
+                  aria-label="Markdown source"
+                  spellcheck={true}
+                  value={markdownText.value}
+                  onInput={onSourceInput}
+                />
+              )}
+              {findTarget.value && (
+                <FindBar
+                  target={findTarget.value}
+                  withReplace={findWithReplace.value}
+                  focusSignal={findFocusSignal.value}
+                  onClose={closeFind}
+                />
+              )}
             </div>
-            {sourceView.value && (
-              <textarea
-                ref={sourceRef}
-                class="markdown-source"
-                aria-label="Markdown source"
-                spellcheck={true}
-                value={markdownText.value}
-                onInput={onSourceInput}
-              />
-            )}
           </div>
           <div class="preview-pane-wrapper">
             <Preview sheets={previewSheets.value} />

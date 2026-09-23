@@ -11,6 +11,8 @@ import { linkSchema } from '@milkdown/kit/preset/commonmark'
 import { TextSelection } from '@milkdown/kit/prose/state'
 import { $useKeymap } from '@milkdown/kit/utils'
 
+import { wordAt } from './word-at'
+
 interface LinkRange {
   mark: Mark
   from: number
@@ -66,8 +68,10 @@ function linkInRange(
 }
 
 /// `Mod-k` opens Crepe's link box. It edits the link under the selection
-/// or adds a link to a selection that has none. With an empty selection
-/// outside a link, the key passes through.
+/// or adds a link to a selection that has none. An empty selection
+/// outside a link takes the word at the caret. With no word there, the
+/// key does nothing. It never reaches the browser, which would move the
+/// focus to the address bar.
 export const linkShortcut: MilkdownPlugin[] = $useKeymap(
   'flashprintLinkShortcut',
   {
@@ -80,12 +84,13 @@ export const linkShortcut: MilkdownPlugin[] = $useKeymap(
 
           const { from, to } = selection
           const link = linkInRange(doc, from, to, linkSchema.type(ctx))
-          if (!link && selection.empty) return false
-          if (!dispatch) return true
+          const target =
+            link || !selection.empty ? { from, to } : wordAt(doc, from)
+          if (!dispatch || !target) return true
 
           const api = ctx.get(linkTooltipAPI.key)
           if (link) api.editLink(link.mark, link.from, link.to)
-          else api.addLink(from, to)
+          else api.addLink(target.from, target.to)
           return true
         }
       },

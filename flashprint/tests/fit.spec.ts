@@ -665,3 +665,324 @@ test('Ctrl+/ opens the shortcut panel and Escape closes it', async ({
   await panel.getByRole('button', { name: 'Close' }).click()
   await expect(panel).toHaveCount(0)
 })
+
+const editorRoot = (page: Page) => page.locator('.fp-editor .ProseMirror')
+
+/// Selects the first occurrence of `text` in the editor, or places the
+/// caret `caretAt` characters into it.
+async function selectInEditor(page: Page, text: string, caretAt?: number) {
+  await editorRoot(page).focus()
+  await page.evaluate(
+    ([needle, caret]) => {
+      const root = document.querySelector('.fp-editor .ProseMirror')
+      if (!root) throw new Error('no editor')
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const at = node.textContent?.indexOf(needle) ?? -1
+        if (at < 0) continue
+        const range = document.createRange()
+        range.setStart(node, at + (caret ?? 0))
+        range.setEnd(node, caret === null ? at + needle.length : at + caret)
+        const selection = window.getSelection()
+        selection?.removeAllRanges()
+        selection?.addRange(range)
+        return
+      }
+      throw new Error(`no text: ${needle}`)
+    },
+    [text, caretAt ?? null] as const
+  )
+  // ProseMirror reads the DOM selection on the next selectionchange.
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(resolve))
+  )
+}
+
+async function placeCaretAtEnd(page: Page, text: string) {
+  await selectInEditor(page, text, text.length)
+}
+
+function printedText(page: Page) {
+  return page.locator('#fp-print-root').textContent()
+}
+
+function occurrences(text: string, word: string): number {
+  return text.split(word).length - 1
+}
+
+const FIND_DOC = [
+  '# Orchard',
+  '',
+  'The apple is red. An apple a day.',
+  '',
+  '- apple pie',
+  '- see [the fruit](https://apple.example)',
+  '',
+].join('\n')
+
+const findField = (page: Page) =>
+  page.getByRole('textbox', { name: 'Find', exact: true })
+const findCount = (page: Page) => page.locator('.fp-find-count')
+const findBar = (page: Page) => page.getByRole('search')
+
+test('Ctrl+F finds, steps through and clears the matches', async ({ page }) => {
+  await openWith(page, FIND_DOC)
+  await page.keyboard.press('Control+f')
+  await expect(findField(page)).toBeFocused()
+  await page.keyboard.type('apple')
+  await expect(findCount(page)).toHaveText('1 of 3')
+  await expect(page.locator('.fp-editor .fp-find-match')).toHaveCount(3)
+
+  await page.keyboard.press('Enter')
+  await expect(findCount(page)).toHaveText('2 of 3')
+  await page.keyboard.press('Shift+Enter')
+  await expect(findCount(page)).toHaveText('1 of 3')
+
+  await page.keyboard.press('Escape')
+  await expect(findBar(page)).toHaveCount(0)
+  await expect(page.locator('.fp-find-match')).toHaveCount(0)
+  await expect(editorRoot(page)).toBeFocused()
+})
+
+test('Ctrl+H replaces every match and one undo brings them back', async ({
+  page,
+}) => {
+  await openWith(page, FIND_DOC)
+  await page.keyboard.press('Control+h')
+  await findField(page).fill('apple')
+  await expect(findCount(page)).toHaveText('1 of 3')
+  await page.getByRole('textbox', { name: 'Replace', exact: true }).fill('pear')
+  await page.getByRole('button', { name: 'Replace all matches' }).click()
+  await expect(findCount(page)).toHaveText('No results')
+  await expect
+    .poll(async () => occurrences((await printedText(page)) ?? '', 'pear'))
+    .toBe(3)
+
+  const source = page.locator('textarea.markdown-source')
+  await viewButton(page, 'Markdown').click()
+  const markdown = await source.inputValue()
+  expect(occurrences(markdown, 'pear')).toBe(3)
+  // The link target is not document text, so it keeps its apple.
+  expect(occurrences(markdown, 'apple')).toBe(1)
+
+  await viewButton(page, 'Formatted').click()
+  await findField(page).press('Escape')
+  await expect(findBar(page)).toHaveCount(0)
+  await expect(editorRoot(page)).toBeFocused()
+  await page.keyboard.press('Control+z')
+  await expect(editorRoot(page)).not.toContainText('pear')
+  expect(
+    occurrences((await editorRoot(page).textContent()) ?? '', 'apple')
+  ).toBe(3)
+})
+
+test('find and replace works in the markdown view', async ({ page }) => {
+  await openWith(page, FIND_DOC)
+  await viewButton(page, 'Markdown').click()
+  const source = page.locator('textarea.markdown-source')
+  await source.focus()
+  await page.keyboard.press('Control+f')
+  await page.keyboard.type('apple')
+  // The markdown also holds the link target.
+  await expect(findCount(page)).toHaveText(/^\d of 4$/)
+  await page.keyboard.press('Control+h')
+  await page.getByRole('textbox', { name: 'Replace', exact: true }).fill('plum')
+  await page.getByRole('button', { name: 'Replace all matches' }).click()
+
+  const value = await source.inputValue()
+  expect(occurrences(value, 'plum')).toBe(4)
+  expect(value).not.toContain('apple')
+  await expect
+    .poll(async () => occurrences((await printedText(page)) ?? '', 'plum'))
+    .toBe(3)
+})
+
+test('the find bar follows the view', async ({ page }) => {
+  await openWith(page, FIND_DOC)
+  await page.keyboard.press('Control+f')
+  await page.keyboard.type('apple')
+  await expect(findCount(page)).toHaveText('1 of 3')
+
+  await viewButton(page, 'Markdown').click()
+  await expect(findCount(page)).toHaveText(/^\d of 4$/)
+  await expect(page.locator('.fp-find-match')).toHaveCount(0)
+
+  await viewButton(page, 'Live').click()
+  await expect(findCount(page)).toHaveText(/^\d of 3$/)
+  await expect(page.locator('.fp-editor .fp-find-match')).toHaveCount(3)
+})
+
+test('a match in a code block counts and keeps the selection', async ({
+  page,
+}) => {
+  await openWith(
+    page,
+    '# Fruit\n\nThe apple is red.\n\n```js\nconst apple = 1\n```\n\nLast apple.\n'
+  )
+  await page.keyboard.press('Control+f')
+  await page.keyboard.type('apple')
+  await expect(findCount(page)).toHaveText('1 of 3')
+  // CodeMirror draws the code block and drops the match decoration.
+  await expect(page.locator('.fp-editor .fp-find-match')).toHaveCount(2)
+
+  await page.keyboard.press('Enter')
+  await expect(findCount(page)).toHaveText('2 of 3')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.cm-editor.cm-focused')).toHaveCount(1)
+  expect(await page.evaluate(() => String(window.getSelection()))).toBe('apple')
+  await page.keyboard.type('pear')
+  await expect(page.locator('.cm-content')).toHaveText('const pear = 1')
+})
+
+async function paragraphTexts(page: Page): Promise<string[]> {
+  return editorRoot(page).locator(':scope > p').allTextContents()
+}
+
+test('Alt+ArrowDown moves a block and one undo puts it back', async ({
+  page,
+}) => {
+  await openWith(page, 'First para.\n\nSecond para.\n\nThird para.\n')
+  await placeCaretAtEnd(page, 'First')
+  await page.keyboard.press('Alt+ArrowDown')
+  await expect
+    .poll(() => paragraphTexts(page))
+    .toEqual(['Second para.', 'First para.', 'Third para.'])
+  await page.keyboard.press('Control+z')
+  await expect
+    .poll(() => paragraphTexts(page))
+    .toEqual(['First para.', 'Second para.', 'Third para.'])
+})
+
+test('Alt+ArrowUp moves a list item inside its list', async ({ page }) => {
+  await openWith(page, '- one\n- two\n- three\n')
+  await placeCaretAtEnd(page, 'two')
+  await page.keyboard.press('Alt+ArrowUp')
+  const items = editorRoot(page).locator('li')
+  await expect(items).toHaveText(['two', 'one', 'three'])
+  await expect(editorRoot(page).locator('ul')).toHaveCount(1)
+})
+
+test('Alt+Shift+ArrowDown duplicates a paragraph', async ({ page }) => {
+  await openWith(page, 'First para.\n\nSecond para.\n')
+  await placeCaretAtEnd(page, 'First')
+  await page.keyboard.press('Alt+Shift+ArrowDown')
+  await expect
+    .poll(() => paragraphTexts(page))
+    .toEqual(['First para.', 'First para.', 'Second para.'])
+})
+
+const linkBox = (page: Page) =>
+  page.locator('.milkdown-link-edit[data-show="true"]')
+
+test('Ctrl+K opens the link box for a selected word', async ({ page }) => {
+  await openWith(page, 'Visit the harbour today.\n')
+  await selectInEditor(page, 'harbour')
+  await page.keyboard.press('Control+k')
+  await expect(linkBox(page)).toBeVisible()
+  await expect(linkBox(page).locator('input')).toBeFocused()
+})
+
+test('Ctrl+K in a word links that word', async ({ page }) => {
+  await openWith(page, 'Visit the harbour today.\n')
+  await selectInEditor(page, 'harbour', 3)
+  await page.keyboard.press('Control+k')
+  await expect(linkBox(page)).toBeVisible()
+  await expect(linkBox(page).locator('input')).toBeFocused()
+  await page.keyboard.type('https://example.com')
+  await page.keyboard.press('Enter')
+  await expect(editorRoot(page).locator('a')).toHaveText('harbour')
+})
+
+test('Ctrl+K away from a word keeps the focus in the editor', async ({
+  page,
+}) => {
+  await openWith(page, 'Visit the harbour today.\n')
+  await selectInEditor(page, 'harbour ', 'harbour '.length)
+  await page.keyboard.press('Control+k')
+  await expect(editorRoot(page)).toBeFocused()
+  await expect(linkBox(page)).toHaveCount(0)
+})
+
+test('typing an arrow replaces it and one undo restores it', async ({
+  page,
+}) => {
+  await openWith(page, 'Start\n')
+  const line = paragraph(page, 'Start')
+  await placeCaretAtEnd(page, 'Start')
+  await page.keyboard.type(' a -> b')
+  await expect(line).toHaveText('Start a → b')
+  await page.keyboard.type(' c ->')
+  await expect(line).toHaveText('Start a → b c →')
+  await page.keyboard.press('Control+z')
+  await expect(line).toHaveText('Start a → b c ->')
+})
+
+test('@date turns into the date', async ({ page }) => {
+  await openWith(page, 'Due\n')
+  await placeCaretAtEnd(page, 'Due')
+  await page.keyboard.type(' @date ')
+  const today = await page.evaluate(() => {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  })
+  await expect(paragraph(page, 'Due')).toHaveText(
+    new RegExp(`^Due ${today}\\s$`)
+  )
+})
+
+test('an arrow typed in inline code stays literal', async ({ page }) => {
+  await openWith(page, 'Some `abc` code\n')
+  await selectInEditor(page, 'abc', 2)
+  await page.keyboard.type('->')
+  await expect(editorRoot(page).locator('code')).toHaveText('ab->c')
+})
+
+test('pasted text keeps its arrows', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await openWith(page, 'Start\n')
+  await page.evaluate(() => navigator.clipboard.writeText('x -> y => z'))
+  await placeCaretAtEnd(page, 'Start')
+  await page.keyboard.press('Control+v')
+  await expect(paragraph(page, 'Start')).toHaveText('Startx -> y => z')
+})
+
+test('==text== highlights, and the highlight survives every output', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await openWith(page, 'Say\n')
+  await placeCaretAtEnd(page, 'Say')
+  await page.keyboard.type(' ==hi== there')
+  const mark = editorRoot(page).locator('mark')
+  await expect(mark).toHaveText('hi')
+
+  await expect(page.locator('#fp-print-root mark')).not.toHaveCount(0)
+  const background = await page
+    .locator('#fp-print-root mark')
+    .first()
+    .evaluate((el) => getComputedStyle(el).backgroundColor)
+  expect(background).not.toBe('rgba(0, 0, 0, 0)')
+  expect(background).not.toBe('transparent')
+
+  await selectInEditor(page, 'hi')
+  await page.keyboard.press('Control+c')
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    '==hi=='
+  )
+
+  await viewButton(page, 'Markdown').click()
+  expect(await page.locator('textarea.markdown-source').inputValue()).toContain(
+    'Say ==hi== there'
+  )
+})
+
+test('Ctrl+Shift+H toggles the highlight on a selection', async ({ page }) => {
+  await openWith(page, 'Make this bright.\n')
+  await selectInEditor(page, 'bright')
+  await page.keyboard.press('Control+Shift+h')
+  await expect(editorRoot(page).locator('mark')).toHaveText('bright')
+  await page.keyboard.press('Control+Shift+h')
+  await expect(editorRoot(page).locator('mark')).toHaveCount(0)
+})

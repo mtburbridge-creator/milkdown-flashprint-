@@ -187,8 +187,6 @@ body {
 }
 
 .editor-pane {
-  /* The find bar sits at the top right of the pane. */
-  position: relative;
   flex: 0 0 55%;
   min-width: 0;
   display: flex;
@@ -236,6 +234,16 @@ body {
 
 .shortcuts-button:hover {
   background: rgba(201, 166, 107, 0.1);
+}
+
+/* The find bar sits at the top right of this box. The box does not
+   scroll, so the bar stays put while the content scrolls under it. */
+.editor-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .editor-surface {

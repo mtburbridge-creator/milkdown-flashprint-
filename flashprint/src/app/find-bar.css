@@ -23,9 +23,11 @@
   outline-offset: 2px;
 }
 
+/* The bar takes the width of its content, so a row that may wrap
+   wraps early. The query field shrinks instead. */
 .fp-find-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
 }
