@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Download, type Page } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 
 import { countPdfPages } from './pdf'
 
@@ -490,4 +491,177 @@ test('the status uses the singular for a one sheet print', async ({ page }) => {
   expect(await page.locator('.status-line').innerText()).toContain(
     '1 face / 1 side / 1 sheet'
   )
+})
+
+async function downloadedText(download: Download): Promise<string> {
+  return readFile(await download.path(), 'utf8')
+}
+
+/// Shows the Markdown view and returns what it holds, which is the
+/// document markdown as the editor serialises it.
+async function markdownOnScreen(page: Page): Promise<string> {
+  await viewButton(page, 'Markdown').click()
+  return page.locator('textarea.markdown-source').inputValue()
+}
+
+test('Ctrl+S saves pasted markdown under a dated name', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await openWith(page, '# Old\n')
+  await page.evaluate(() =>
+    navigator.clipboard.writeText('# Pasted\n\nSome **bold** text.\n')
+  )
+  await page.getByRole('button', { name: 'Paste' }).click()
+  await expect(paragraph(page, 'Some')).toContainText('bold')
+
+  const pending = page.waitForEvent('download')
+  await page.keyboard.press('Control+s')
+  const download = await pending
+  const today = await page.evaluate(() => {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  })
+  expect(download.suggestedFilename()).toBe(`flashprint-${today}.md`)
+  const saved = await downloadedText(download)
+  expect(saved).toContain('**bold**')
+  expect(saved).toBe(await markdownOnScreen(page))
+})
+
+test('Ctrl+S names the save after an opened file', async ({ page }) => {
+  await openWith(page, VIEW_DOC)
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'meeting notes.markdown',
+    mimeType: 'text/markdown',
+    buffer: Buffer.from('# Notes\n\n- first\n- second\n'),
+  })
+  await expect(page.locator('.file-name')).toHaveText('meeting notes.markdown')
+  await expect(page.locator('.fp-editor .ProseMirror h1')).toHaveText('Notes')
+
+  const expected = await markdownOnScreen(page)
+  // The text area waits before it pushes an edit. A save straight after
+  // typing must still hold the new text.
+  const source = page.locator('textarea.markdown-source')
+  await source.focus()
+  await page.keyboard.press('Control+End')
+  await page.keyboard.type('\nA new line.')
+  const pending = page.waitForEvent('download')
+  await page.keyboard.press('Control+s')
+  const download = await pending
+  expect(download.suggestedFilename()).toBe('meeting notes.md')
+  const saved = await downloadedText(download)
+  expect(saved).toBe(await source.inputValue())
+  expect(saved).toBe(`${expected}\nA new line.`)
+})
+
+test('the Save .md button saves the markdown', async ({ page }) => {
+  await openWith(page, VIEW_DOC)
+  const button = page.getByRole('button', { name: 'Save .md' })
+  await expect(button).toHaveAttribute('title', 'Save as markdown (Ctrl+S)')
+
+  const pending = page.waitForEvent('download')
+  await button.click()
+  const download = await pending
+  expect(download.suggestedFilename()).toMatch(
+    /^flashprint-\d{4}-\d{2}-\d{2}\.md$/
+  )
+  expect(await downloadedText(download)).toBe(await markdownOnScreen(page))
+})
+
+test('the markdown view checks spelling', async ({ page }) => {
+  await openWith(page, VIEW_DOC)
+  await viewButton(page, 'Markdown').click()
+  await expect(page.locator('textarea.markdown-source')).toHaveAttribute(
+    'spellcheck',
+    'true'
+  )
+})
+
+test('Ctrl+Shift+. cycles the views and the choice survives a reload', async ({
+  page,
+}) => {
+  await openWith(page, VIEW_DOC)
+  const pressed = (label: string) =>
+    expect(viewButton(page, label)).toHaveAttribute('aria-pressed', 'true')
+  await pressed('Formatted')
+  await expect(viewButton(page, 'Live')).toHaveAttribute(
+    'title',
+    /Ctrl\+Shift\+\. cycles views/
+  )
+
+  await paragraph(page, 'A plain paragraph').click()
+  await page.keyboard.press('Control+Shift+Period')
+  await pressed('Markdown')
+  const source = page.locator('textarea.markdown-source')
+  await expect(source).toBeFocused()
+  expect(await source.inputValue()).toContain('# Quarterly report')
+
+  await page.keyboard.press('Control+Shift+Period')
+  await pressed('Live')
+  await expect(source).toHaveCount(0)
+  await expect(page.locator('.fp-editor .ProseMirror')).toBeFocused()
+
+  await page.keyboard.press('Control+Shift+Period')
+  await pressed('Formatted')
+
+  await page.keyboard.press('Control+Shift+Period')
+  await pressed('Markdown')
+  await page.reload()
+  await waitForFit(page)
+  await pressed('Markdown')
+  await expect(source).toBeVisible()
+})
+
+test('Ctrl+/ opens the shortcut panel and Escape closes it', async ({
+  page,
+}) => {
+  await openWith(page, VIEW_DOC)
+  const editor = page.locator('.fp-editor .ProseMirror')
+  await paragraph(page, 'A plain paragraph').click()
+  await expect(editor).toBeFocused()
+
+  await page.keyboard.press('Control+/')
+  const panel = page.getByRole('dialog', { name: 'Keyboard shortcuts' })
+  await expect(panel).toBeVisible()
+  await expect(panel).toHaveAttribute('aria-modal', 'true')
+  for (const text of [
+    'Save as markdown',
+    'Find',
+    'Find and replace',
+    'Move block up or down',
+    'Typing shortcuts',
+    '==text==',
+    '@today',
+  ]) {
+    await expect(panel.getByText(text, { exact: true }).first()).toBeVisible()
+  }
+  await expect(
+    panel.locator('.shortcuts-row', { hasText: 'Save as markdown' })
+  ).toContainText('CtrlS')
+  // The panel swallows app shortcuts while it is open.
+  await page.keyboard.press('Control+Shift+Period')
+  await expect(viewButton(page, 'Formatted')).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+
+  await page.keyboard.press('Escape')
+  await expect(panel).toHaveCount(0)
+  await expect(editor).toBeFocused()
+
+  const help = page.getByRole('button', { name: 'Keyboard shortcuts' })
+  await help.click()
+  await expect(panel).toBeVisible()
+  await page.keyboard.press('Control+/')
+  await expect(panel).toHaveCount(0)
+  await expect(help).toBeFocused()
+
+  await help.click()
+  await page.mouse.click(5, 5)
+  await expect(panel).toHaveCount(0)
+  await help.click()
+  await panel.getByRole('button', { name: 'Close' }).click()
+  await expect(panel).toHaveCount(0)
 })

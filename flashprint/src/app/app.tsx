@@ -1,8 +1,10 @@
 import { Crepe } from '@milkdown/crepe'
+import { editorViewCtx } from '@milkdown/kit/core'
 import { replaceAll } from '@milkdown/kit/utils'
 import {
   computed,
   defineComponent,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   reactive,
@@ -26,6 +28,7 @@ import { livePreview, setLivePreview } from './live-preview'
 import { markdownClipboard } from './markdown-clipboard'
 import { updatePageRule } from './page-rule'
 import { Preview } from './preview'
+import { formatShortcut, hasModKey, ShortcutsPanel } from './shortcuts-panel'
 import {
   createTouchedFields,
   DEFAULT_SETTINGS,
@@ -34,6 +37,7 @@ import {
   loadSettings,
   markRefitFinished,
   markRefitStarted,
+  nextView,
   SAMPLE_MARKDOWN,
   saveMarkdown,
   saveSettings,
@@ -51,6 +55,11 @@ const SEGMENT_CLASS = {
   strong: 'status-strong',
   muted: 'status-tail',
 } as const
+const SAVE_TITLE = `Save as markdown (${formatShortcut(['Mod', 'S'])})`
+const MARKDOWN_MIME = 'text/markdown;charset=utf-8'
+// Some browsers still read the blob after `click()` returns, so the URL
+// must outlive the call.
+const REVOKE_DELAY_MS = 10_000
 const PRINT_TIPS =
   'In the print dialog choose Landscape (or Portrait for one page per ' +
   'sheet), Margins: None, Scale: 100%, and turn off headers and footers. ' +
@@ -66,6 +75,31 @@ function getPrintRoot(): HTMLElement {
   el.id = 'fp-print-root'
   document.body.appendChild(el)
   return el
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+/// The name a download gets: the loaded file's name with a `.md`
+/// extension, or a local date stamp when the text was pasted or typed.
+function saveFileName(loadedName: string, now: Date): string {
+  if (loadedName) return `${loadedName.replace(/\.[^.]*$/, '')}.md`
+  const date = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
+  return `flashprint-${date}.md`
+}
+
+function downloadText(text: string, name: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: MARKDOWN_MIME }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
+}
+
+function isSlashKey(event: KeyboardEvent): boolean {
+  return event.key === '/' || event.code === 'Slash'
 }
 
 function count(n: number, noun: string): string {
@@ -160,6 +194,8 @@ export const App = defineComponent({
     const recoveryNotice = ref(start.recovered)
 
     const editorRootRef = ref<HTMLElement | null>(null)
+    const editorSurfaceRef = ref<HTMLElement | null>(null)
+    const sourceRef = ref<HTMLTextAreaElement | null>(null)
     const fileInputRef = ref<HTMLInputElement | null>(null)
     const previewSheets = shallowRef<HTMLElement | null>(null)
     const fitResult = shallowRef<RefitOutcome | null>(null)
@@ -167,6 +203,7 @@ export const App = defineComponent({
     const dragActive = ref(false)
     const fileName = ref('')
     const markdownText = ref('')
+    const shortcutsOpen = ref(false)
     const sourceView = computed(() => settings.editor.view === 'markdown')
 
     let crepe: Crepe | null = null
@@ -228,6 +265,25 @@ export const App = defineComponent({
       }, SOURCE_DEBOUNCE_MS)
     }
 
+    function flushSourcePush() {
+      if (sourcePushTimer === undefined) return
+      replaceEditorContent(markdownText.value)
+    }
+
+    /// The markdown on screen. The text area wins in the Markdown view,
+    /// because the editor may still wait for its debounced push.
+    function currentMarkdown(): string {
+      if (sourceView.value) {
+        flushSourcePush()
+        return markdownText.value
+      }
+      return crepe?.getMarkdown() ?? markdownText.value
+    }
+
+    function saveMarkdownFile() {
+      downloadText(currentMarkdown(), saveFileName(fileName.value, new Date()))
+    }
+
     function applyView(view: ViewMode) {
       if (!crepe) return
       setLivePreview(crepe.editor, view === 'live')
@@ -236,6 +292,61 @@ export const App = defineComponent({
 
     function selectView(view: ViewMode) {
       settings.editor.view = view
+    }
+
+    function focusEditingSurface() {
+      if (sourceView.value) {
+        sourceRef.value?.focus()
+        return
+      }
+      crepe?.editor.action((ctx) => ctx.get(editorViewCtx).focus())
+    }
+
+    /// Steps to the next view. A switch hides or removes the focused
+    /// surface, so focus follows to the new one when it was there.
+    async function cycleView() {
+      const active = document.activeElement
+      const wasEditing =
+        !!active &&
+        (active === sourceRef.value ||
+          !!editorSurfaceRef.value?.contains(active))
+      selectView(nextView(settings.editor.view))
+      if (!wasEditing) return
+      await nextTick()
+      focusEditingSurface()
+    }
+
+    function openShortcuts() {
+      shortcutsOpen.value = true
+    }
+
+    function closeShortcuts() {
+      shortcutsOpen.value = false
+    }
+
+    function onWindowKeydown(event: KeyboardEvent) {
+      const mod = hasModKey(event)
+      if (shortcutsOpen.value) {
+        if (event.key === 'Escape' || (mod && isSlashKey(event))) {
+          event.preventDefault()
+          closeShortcuts()
+        }
+        return
+      }
+      // A key the editor already handled, such as `Mod-/` in a code
+      // block, is not an app shortcut.
+      if (!mod || event.altKey || event.defaultPrevented) return
+      if (event.key.toLowerCase() === 's' && !event.shiftKey) {
+        event.preventDefault()
+        saveMarkdownFile()
+      } else if (event.code === 'Period' && event.shiftKey) {
+        // Shift turns the key into `>` on many layouts, so match the code.
+        event.preventDefault()
+        void cycleView()
+      } else if (isSlashKey(event)) {
+        event.preventDefault()
+        openShortcuts()
+      }
     }
 
     async function pasteMarkdown() {
@@ -321,6 +432,7 @@ export const App = defineComponent({
       )
       await crepe.create()
       applyView(settings.editor.view)
+      window.addEventListener('keydown', onWindowKeydown)
 
       // fitDocument measures against document fonts. Running before
       // they load would size the ladder against fallback metrics.
@@ -334,6 +446,7 @@ export const App = defineComponent({
     })
 
     onBeforeUnmount(() => {
+      window.removeEventListener('keydown', onWindowKeydown)
       document.fonts.removeEventListener('loadingdone', onFontLoadingDone)
       window.removeEventListener('pagehide', markRefitFinished)
       if (clipboardHintTimer !== undefined) clearTimeout(clipboardHintTimer)
@@ -418,6 +531,9 @@ export const App = defineComponent({
             <button type="button" onClick={openFilePicker}>
               Open .md
             </button>
+            <button type="button" title={SAVE_TITLE} onClick={saveMarkdownFile}>
+              Save .md
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -441,8 +557,13 @@ export const App = defineComponent({
 
         <div class="body-split">
           <div class="editor-pane">
-            <ViewStrip view={settings.editor.view} onSelect={selectView} />
+            <ViewStrip
+              view={settings.editor.view}
+              onSelect={selectView}
+              onShowShortcuts={openShortcuts}
+            />
             <div
+              ref={editorSurfaceRef}
               class="editor-surface"
               style={{ display: sourceView.value ? 'none' : '' }}
             >
@@ -450,9 +571,10 @@ export const App = defineComponent({
             </div>
             {sourceView.value && (
               <textarea
+                ref={sourceRef}
                 class="markdown-source"
                 aria-label="Markdown source"
-                spellcheck={false}
+                spellcheck={true}
                 value={markdownText.value}
                 onInput={onSourceInput}
               />
@@ -468,6 +590,8 @@ export const App = defineComponent({
         {dragActive.value && (
           <div class="drop-overlay">Drop a .md or .txt file to load it</div>
         )}
+
+        {shortcutsOpen.value && <ShortcutsPanel onClose={closeShortcuts} />}
       </div>
     )
   },
