@@ -29,6 +29,7 @@ const INLINE_MARKERS: Record<string, MarkerPair> = {
   emphasis: { open: '*', close: '*' },
   inlineCode: { open: '`', close: '`' },
   strike_through: { open: '~~', close: '~~' },
+  highlight: { open: '==', close: '==' },
 }
 
 function markerFor(mark: Mark): MarkerPair | null {

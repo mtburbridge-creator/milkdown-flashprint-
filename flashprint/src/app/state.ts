@@ -25,6 +25,15 @@ export function clamp(value: number, min: number, max: number): number {
 /// formatted text with the syntax of the current block revealed.
 export type ViewMode = 'formatted' | 'markdown' | 'live'
 
+/// The views in the order the view strip shows them and the cycle key
+/// steps through them.
+export const VIEW_ORDER: readonly ViewMode[] = ['formatted', 'markdown', 'live']
+
+export function nextView(view: ViewMode): ViewMode {
+  const index = VIEW_ORDER.indexOf(view)
+  return VIEW_ORDER[(index + 1) % VIEW_ORDER.length] ?? view
+}
+
 export interface EditorSettings {
   view: ViewMode
 }
