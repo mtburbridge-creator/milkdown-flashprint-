@@ -58,7 +58,7 @@ export const FindBar = defineComponent({
     const queryField = ref<HTMLInputElement | null>(null)
     const replaceField = ref<HTMLInputElement | null>(null)
     let searchTimer: ReturnType<typeof setTimeout> | undefined
-    let stopWatching: (() => void) | undefined
+    let unsubscribe: (() => void) | undefined
 
     function cancelSearch(): boolean {
       if (searchTimer === undefined) return false
@@ -80,9 +80,9 @@ export const FindBar = defineComponent({
       return true
     }
 
-    function watchTarget(target: FindTarget): void {
-      stopWatching?.()
-      stopWatching = target.watch?.((state) => {
+    function subscribeTo(target: FindTarget): void {
+      unsubscribe?.()
+      unsubscribe = target.subscribe?.((state) => {
         findState.value = state
       })
     }
@@ -168,7 +168,7 @@ export const FindBar = defineComponent({
       () => props.target,
       (target, previous) => {
         previous.clear()
-        watchTarget(target)
+        subscribeTo(target)
         if (query.value) runSearch()
       },
       { flush: 'post' }
@@ -187,13 +187,13 @@ export const FindBar = defineComponent({
     )
 
     onMounted(() => {
-      watchTarget(props.target)
+      subscribeTo(props.target)
       void focusQuery()
     })
 
     onBeforeUnmount(() => {
       cancelSearch()
-      stopWatching?.()
+      unsubscribe?.()
       props.target.clear()
     })
 

@@ -167,6 +167,15 @@
   text-decoration: line-through;
 }
 
+/* Browsers drop backgrounds when they print unless the page asks for exact
+   colors. */
+.fp-doc mark {
+  background: #fff176;
+  color: inherit;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
 .fp-doc em {
   font-style: italic;
 }

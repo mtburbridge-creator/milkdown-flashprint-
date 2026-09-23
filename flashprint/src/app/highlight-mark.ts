@@ -46,7 +46,7 @@ function edgeChar(node: MdNode | undefined, side: 'first' | 'last'): string {
 // white space and closes after one, so `a == b` stays literal.
 function findDelimiters(text: string, before: string, after: string) {
   const found: Delimiter[] = []
-  for (let at = text.indexOf(DELIMITER); at >= 0; ) {
+  for (let at = text.indexOf(DELIMITER); at >= 0;) {
     const prev = at > 0 ? text.charAt(at - 1) : before
     const next = at + 2 < text.length ? text.charAt(at + 2) : after
     if (prev !== '=' && next !== '=')
@@ -187,10 +187,7 @@ const highlightSchema = $markSchema('highlight', () => ({
 }))
 
 const highlightInputRule = $inputRule((ctx) =>
-  markRule(
-    /(?<!=)==([^=\s](?:[^=]*[^=\s])?)==$/,
-    highlightSchema.type(ctx)
-  )
+  markRule(/(?<!=)==([^=\s](?:[^=]*[^=\s])?)==$/, highlightSchema.type(ctx))
 )
 
 const highlightKeymap = $useKeymap('flashprintHighlight', {

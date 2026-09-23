@@ -46,7 +46,7 @@ export interface FindTarget {
   focus(): void
   /// Calls `listener` when an edit in the document changes the matches.
   /// Returns a function that stops the calls.
-  watch?(listener: FindListener): () => void
+  subscribe?(listener: FindListener): () => void
 }
 
 interface FindPluginState {
@@ -71,7 +71,7 @@ const NO_FIND: FindPluginState = {
 /// Stands in for each inline node that is not text, such as an image.
 /// A block string then has one character for each position, so an
 /// offset maps to a document position by a plain addition.
-const OBJECT_CHAR = '￼'
+const OBJECT_CHAR = String.fromCodePoint(0xfffc)
 
 function blockText(block: ProseNode): string {
   let text = ''
@@ -324,12 +324,14 @@ export function viewFindTarget(
     focus() {
       getView().focus()
     },
-    watch(listener) {
+    subscribe(listener) {
       const view = getView()
       const listeners = findListeners.get(view) ?? new Set<FindListener>()
       findListeners.set(view, listeners)
       listeners.add(listener)
-      return () => listeners.delete(listener)
+      return () => {
+        listeners.delete(listener)
+      }
     },
   }
 }
@@ -338,9 +340,10 @@ export function editorFindTarget(editor: Editor): FindTarget {
   return viewFindTarget(() => editor.action((ctx) => ctx.get(editorViewCtx)))
 }
 
+const ZERO_WIDTH_SPACE = String.fromCodePoint(0x200b)
+
 /// Text area styles that decide where a line wraps.
 const MIRRORED_STYLES = [
-  'box-sizing',
   'font-family',
   'font-size',
   'font-style',
@@ -376,7 +379,7 @@ function revealTextOffset(textarea: HTMLTextAreaElement, offset: number) {
   })
   mirror.textContent = textarea.value.slice(0, offset)
   const marker = document.createElement('span')
-  marker.textContent = '​'
+  marker.textContent = ZERO_WIDTH_SPACE
   mirror.append(marker)
   document.body.append(mirror)
   const top = marker.offsetTop
@@ -481,7 +484,7 @@ export function textareaFindTarget(
     focus() {
       textarea.focus({ preventScroll: true })
     },
-    watch(listener) {
+    subscribe(listener) {
       if (listeners.size === 0) textarea.addEventListener('input', onInput)
       listeners.add(listener)
       return () => {
