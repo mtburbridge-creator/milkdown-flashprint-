@@ -1050,3 +1050,51 @@ test('a wide table scrolls inside its block and keeps words whole', async ({
   expect(sizes.paneOverflows).toBe(false)
   expect(sizes.dateLines).toBe(1)
 })
+
+/// Fragments of the page content that cross the edge of the page they
+/// start on. Every page is a window onto one flow, so such a fragment
+/// also paints over the neighbouring page.
+function bleedingFragments(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = []
+    for (const view of document.querySelectorAll('.preview-pane .fp-window')) {
+      const edge = view.getBoundingClientRect()
+      for (const el of view.querySelectorAll('.fp-doc *')) {
+        for (const rect of el.getClientRects()) {
+          if (rect.width === 0) continue
+          if (rect.right <= edge.left + 1 || rect.left >= edge.right - 1)
+            continue
+          if (rect.left < edge.left - 1 || rect.right > edge.right + 1)
+            out.push(`${el.tagName}: ${el.textContent?.slice(0, 40)}`)
+        }
+      }
+    }
+    return out
+  })
+}
+
+const DATES = Array.from(
+  { length: 10 },
+  (_, index) => `${String(index + 1).padStart(2, '0')}/14/2025`
+)
+const WIDE_DOC = [
+  '# Labs',
+  '',
+  `| Analyte | ${DATES.join(' | ')} |`,
+  `|---|${DATES.map(() => '---').join('|')}|`,
+  `| Hemoglobin (g/dL) | ${DATES.map(() => '10.7').join(' | ')} |`,
+  '',
+  '| Draw | Value |',
+  '|---|---|',
+  '| current | 11 |',
+  '',
+  `See https://example.com/${'averylongpathsegment'.repeat(8)} for more.`,
+  '',
+].join('\n')
+
+test('a wide table and a long link stay inside their page', async ({
+  page,
+}) => {
+  await openWith(page, WIDE_DOC)
+  expect(await bleedingFragments(page)).toEqual([])
+})

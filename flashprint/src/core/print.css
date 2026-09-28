@@ -14,6 +14,9 @@
   line-height: var(--fp-line-height);
   color: #000;
   background: transparent;
+  /* A long word such as a URL wraps instead of running into the next
+     page. It leaves the narrowest width of a table alone. */
+  overflow-wrap: break-word;
 }
 
 /* Every length below is in em, so the font size variable scales the whole
@@ -118,12 +121,19 @@
   border-left: 3px solid #bbb;
 }
 
+/* `max-width` cannot squeeze a table below its longest words.
+   `capWideBlocks` sets `--fp-wide-font` on a table that would still be
+   wider than the page. */
 .fp-doc table {
   border-collapse: collapse;
   margin: var(--fp-block-gap) 0;
   width: auto;
   max-width: 100%;
-  font-size: 0.9em;
+  font-size: min(0.9em, var(--fp-wide-font, 0.9em));
+}
+
+.fp-doc table[data-fp-squeeze] :is(th, td) {
+  overflow-wrap: anywhere;
 }
 
 .fp-doc th,
@@ -139,6 +149,12 @@
 .fp-doc img {
   max-width: 100%;
   height: auto;
+}
+
+/* An image taller than a page would be cut off at the page's bottom edge. */
+.fp-paged img {
+  max-height: var(--fp-content-h);
+  object-fit: contain;
 }
 
 .fp-doc figure {
@@ -229,6 +245,24 @@
 .fp-doc .fp-math-block {
   margin: var(--fp-block-gap) 0;
   text-align: center;
+  font-size: min(1em, var(--fp-wide-font, 1em));
+}
+
+/* Math cannot wrap. What is still too wide at the smallest font is cut at
+   the page edge instead of painting over the next page. */
+.fp-doc .fp-math-block[data-fp-squeeze] {
+  overflow: hidden;
+}
+
+/* The layout `capWideBlocks` measures in: every wide block at its
+   narrowest width. */
+.fp-narrowest table {
+  width: min-content;
+  max-width: none;
+}
+
+.fp-narrowest .fp-math-block {
+  width: max-content;
 }
 
 /* Fragmentation. The fitter relaxes the strict rules when it runs out of
@@ -249,6 +283,11 @@
 
 .fp-doc tr {
   break-inside: avoid;
+}
+
+/* A header row alone at the foot of a page reads as a broken table. */
+.fp-doc tr:first-child:has(th) {
+  break-after: avoid;
 }
 
 .fp-doc h1,
