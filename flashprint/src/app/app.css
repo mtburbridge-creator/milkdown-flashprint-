@@ -314,6 +314,20 @@ body {
   border: 1px solid #d6c9ad;
 }
 
+/* The table styles fix the layout, which gives every column the same
+   width and breaks a long word such as a lab name in the middle. Columns
+   sized to their content keep whole words together. A table too wide for
+   the pane scrolls sideways. The padding leaves room for the add buttons
+   that sit on the table's top and left edges. */
+.fp-editor .milkdown .milkdown-table-block table {
+  table-layout: auto;
+}
+
+.fp-editor .milkdown .milkdown-table-block .table-wrapper {
+  overflow-x: auto;
+  padding: 8px 0 4px 8px;
+}
+
 .preview-pane-wrapper {
   flex: 1;
   min-width: 0;

@@ -38,6 +38,7 @@ import { livePreview, setLivePreview } from './live-preview'
 import { markdownClipboard } from './markdown-clipboard'
 import { updatePageRule } from './page-rule'
 import { Preview } from './preview'
+import { rawHtml } from './raw-html'
 import {
   formatShortcut,
   hasModKey,
@@ -496,6 +497,7 @@ export const App = defineComponent({
         .use(linkShortcut)
         .use(typography)
         .use(highlightMark)
+        .use(rawHtml)
         .use(findReplace)
       crepe.on((api) =>
         api.markdownUpdated((_ctx, markdown) => {
