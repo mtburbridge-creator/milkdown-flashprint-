@@ -986,3 +986,67 @@ test('Ctrl+Shift+H toggles the highlight on a selection', async ({ page }) => {
   await page.keyboard.press('Control+Shift+h')
   await expect(editorRoot(page).locator('mark')).toHaveCount(0)
 })
+
+const WRAPPED_TABLE = [
+  '**Labs**',
+  '',
+  '<mdtable>',
+  '| Analyte | 09/03/2026 | 04/23/2026 | 10/14/2025 | 10/13/2025 | 07/24/2025 |',
+  '|---|---|---|---|---|---|',
+  '| Hemoglobin (g/dL) | 10.7 | 11.5 | 10.3 | 11.6 | 11.3 |',
+  '</mdtable>',
+  '',
+].join('\n')
+
+test('a table wrapped in an unknown tag is editable', async ({ page }) => {
+  await openWith(page, WRAPPED_TABLE)
+  await expect(editorRoot(page).locator('[data-type="html"]')).toHaveCount(0)
+  const cell = editorRoot(page).locator('td').nth(1)
+  await expect(cell).toHaveText('10.7')
+
+  await placeCaretAtEnd(page, '10.7')
+  await page.keyboard.type('5')
+  await expect(cell).toHaveText('10.75')
+  await expect(
+    page.locator('#fp-print-root td', { hasText: /^10\.75$/ })
+  ).not.toHaveCount(0)
+
+  const printed = (await printedText(page)) ?? ''
+  expect(printed).not.toContain('mdtable')
+  expect(printed).not.toContain('|---')
+
+  const markdown = await markdownOnScreen(page)
+  expect(markdown).toContain('<mdtable>')
+  expect(markdown).toMatch(/\| 10\.75 +\|/)
+  expect(markdown).toContain('</mdtable>')
+})
+
+test('a wide table scrolls inside its block and keeps words whole', async ({
+  page,
+}) => {
+  await openWith(page, WRAPPED_TABLE)
+  const sizes = await page.evaluate(() => {
+    const surface = document.querySelector('.editor-surface')!
+    const wrapper = [...document.querySelectorAll('.table-wrapper')].find(
+      (el) => el.clientWidth > 0
+    )!
+    const header = [...wrapper.querySelectorAll('th')].find(
+      (el) => el.textContent === '09/03/2026'
+    )!
+    // One client rect per line box the date's text runs across.
+    const range = document.createRange()
+    const text = document
+      .createTreeWalker(header, NodeFilter.SHOW_TEXT)
+      .nextNode()!
+    range.selectNodeContents(text)
+    const lines = new Set(
+      [...range.getClientRects()].map((rect) => Math.round(rect.top))
+    )
+    return {
+      paneOverflows: surface.scrollWidth > surface.clientWidth,
+      dateLines: lines.size,
+    }
+  })
+  expect(sizes.paneOverflows).toBe(false)
+  expect(sizes.dateLines).toBe(1)
+})
