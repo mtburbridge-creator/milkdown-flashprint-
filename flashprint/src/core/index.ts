@@ -6,6 +6,7 @@ export type { SheetOptions } from './sheets'
 export { fitDocument, fitDocumentAsync } from './fit'
 export { applyCompaction, compactionAt, LADDER_STEPS } from './ladder'
 export { measurePages } from './measure'
+export { capWideBlocks, MIN_WIDE_FONT_PX } from './wide'
 export {
   DPI,
   PAPERS,

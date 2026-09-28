@@ -4,6 +4,7 @@ import { applyCompaction, compactionAt, LADDER_STEPS } from './ladder'
 import { measurePages } from './measure'
 import { sheetsFor, sidesFor } from './paper'
 import { pickTarget } from './target'
+import { capWideBlocks } from './wide'
 
 /// Counts the pages of a document at its current compaction.
 export type PageCounter = (doc: HTMLElement, box: PageBox) => number
@@ -87,6 +88,9 @@ interface FitRun {
 function startFit(opts: FitOptions): FitRun {
   const { box, doc, fit } = opts
   const count = opts.measure ?? measurePages
+
+  // The caps are pixel sizes, so they hold at every level below.
+  capWideBlocks(doc, box)
 
   const measureAt = (level: number): number => {
     applyCompaction(doc, compactionAt(level, fit))
