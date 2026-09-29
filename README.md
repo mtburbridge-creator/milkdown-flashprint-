@@ -1,8 +1,6 @@
 # FlashPrint
 
-Paste markdown, edit it, and print it two pages to a sheet. FlashPrint changes the font size and spacing so the document fits the page count you pick, and it packs the pages onto landscape sheets so you use half the paper.
-
-**Live app:** [markburbridge.com/FlashPrint](https://markburbridge.com/FlashPrint)
+Paste markdown, edit it, and print it **two pages to a sheet**. FlashPrint changes the font size and spacing so the document fits the page count you pick, and it packs the pages onto landscape sheets so you use half the paper.
 
 ![FlashPrint with a document in the editor and the two-up print preview](flashprint/docs/screenshots/overview.png)
 
@@ -104,12 +102,6 @@ Deployment notes for Vercel and GitHub Pages, and a deeper look at the fitting c
 FlashPrint stands on Milkdown. The editor, the markdown parser and serializer, the table, code block, and list features, and the plugin system all come from that project and the people who built it.
 
 - **[Saul Mirone](https://github.com/Saul-Mirone)** created Milkdown and has maintained it for years.
-- **[Meo](https://meo.cool/)** designed the Milkdown website and its look.
-- **Every contributor** who has committed to Milkdown. Dozens of people have code in this repository's history, and the graph below lists them.
-
-<a href="https://github.com/Milkdown/milkdown/graphs/contributors">
-  <img src="https://opencollective.com/milkdown/contributors.svg?width=890&button=false" alt="Milkdown contributors">
-</a>
 
 Milkdown is built on [ProseMirror](https://prosemirror.net/) and [remark](https://github.com/remarkjs/remark), and is inspired by [Typora](https://typora.io/). FlashPrint also uses [CodeMirror](https://codemirror.net/) for code blocks and [KaTeX](https://katex.org/) for math.
 
@@ -123,10 +115,6 @@ This fork has one human contributor, [@mtburbridge-creator](https://github.com/m
 
 Milkdown is a plugin-driven WYSIWYG markdown editor. Its [documentation](https://milkdown.dev/) covers the editor, the plugin API, and the Crepe editor that FlashPrint uses. To contribute to Milkdown itself, follow the [upstream contribution guide](https://github.com/Milkdown/milkdown/blob/main/CONTRIBUTING.md) and send changes to the [Milkdown repository](https://github.com/Milkdown/milkdown).
 
-<div align="center">
-  <img src="/assets/logo.svg" alt="Milkdown logo" />
-</div>
-
 ## License
 
-[MIT](/LICENSE). Copyright (c) 2020-present Mirone.
+[MIT](/LICENSE). Copyright (c) 2026-present Burbridge.
