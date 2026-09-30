@@ -56,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
     exactPages: 4,
     minFontPx: 10,
     maxFontPx: 16,
+    compressBlocks: false,
   },
   editor: {
     view: 'formatted',
@@ -157,6 +158,10 @@ function readFitSettings(raw: unknown): FitSettings {
       : defaults.exactPages,
     minFontPx,
     maxFontPx,
+    compressBlocks:
+      typeof source['compressBlocks'] === 'boolean'
+        ? source['compressBlocks']
+        : defaults.compressBlocks,
   }
 }
 

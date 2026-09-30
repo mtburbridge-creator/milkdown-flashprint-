@@ -120,7 +120,17 @@ test('long document is shrunk to one page fewer than natural', async ({
     localStorage.getItem('flashprint:settings')
   )
   expect(status.pages, `${status.text} | ${stored}`).toBe(target)
-  expect(status.font < 16 || status.line < 1.5).toBe(true)
+  // The status rounds the line height, so read the applied values.
+  const applied = await page.evaluate(() => {
+    const doc = document.querySelector<HTMLElement>('#fp-print-root .fp-doc')
+    return {
+      font: parseFloat(doc?.style.getPropertyValue('--fp-font-size') ?? ''),
+      line: parseFloat(doc?.style.getPropertyValue('--fp-line-height') ?? ''),
+    }
+  })
+  expect(applied.font < 16 || applied.line < 1.5, JSON.stringify(applied)).toBe(
+    true
+  )
 })
 
 test('single layout prints one page per sheet', async ({ page }) => {
@@ -1097,4 +1107,141 @@ test('a wide table and a long link stay inside their page', async ({
 }) => {
   await openWith(page, WIDE_DOC)
   expect(await bleedingFragments(page)).toEqual([])
+})
+
+const COMPRESS_DOC = [
+  '# Results',
+  '',
+  ...Array.from(
+    { length: 5 },
+    (_, index) =>
+      `Paragraph ${index + 1} fills the first page so the table below ` +
+      'does not fit in the space that is left under it. '.repeat(3) +
+      '\n'
+  ),
+  '| Test | Range | Value | Flag |',
+  '|---|---|---|---|',
+  ...Array.from(
+    { length: 24 },
+    (_, index) => `| Analyte ${index + 1} | 1.0–2.0 | 1.${index} | L |`
+  ),
+  '',
+  '```text',
+  ...Array.from({ length: 70 }, (_, index) => `code line ${index + 1}`),
+  '```',
+  '',
+].join('\n')
+
+async function openUnrounded(page: Page, markdown: string) {
+  await page.addInitScript(
+    ([md, settings]) => {
+      localStorage.setItem('flashprint:markdown', md)
+      if (!localStorage.getItem('flashprint:settings'))
+        localStorage.setItem('flashprint:settings', settings)
+    },
+    [markdown, JSON.stringify({ fit: { rounding: 'none' } })] as const
+  )
+  await page.goto('.')
+  return waitForFit(page)
+}
+
+/// For each preview page, the table rows that start on it, in order, as
+/// `H` for a header row and `D` for a data row.
+function rowsPerPage(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    [...document.querySelectorAll('.preview-pane .fp-window')].map((view) => {
+      const edge = view.getBoundingClientRect()
+      return [...view.querySelectorAll('tr')]
+        .filter((row) => {
+          const rect = row.getClientRects()[0]
+          return (
+            rect && rect.left >= edge.left - 1 && rect.right <= edge.right + 1
+          )
+        })
+        .map((row) => (row.querySelector('th') ? 'H' : 'D'))
+        .join('')
+    })
+  )
+}
+
+function compressSwitch(page: Page) {
+  return page.getByRole('switch', { name: 'Compress blocks' })
+}
+
+test('a table that does not fit moves whole to the next page by default', async ({
+  page,
+}) => {
+  await openUnrounded(page, COMPRESS_DOC)
+  await expect(compressSwitch(page)).toHaveAttribute('aria-checked', 'false')
+  const pages = await rowsPerPage(page)
+  expect(pages[0]).toBe('')
+  expect(pages[1]).toMatch(/^HD+$/)
+})
+
+test('compress blocks splits a table to fill each page and repeats its header', async ({
+  page,
+}) => {
+  await openUnrounded(page, COMPRESS_DOC)
+  await compressSwitch(page).click()
+  await expect(compressSwitch(page)).toHaveAttribute('aria-checked', 'true')
+  await expect(
+    page.locator('#fp-print-root table[data-fp-continued]').first()
+  ).toBeAttached()
+  await waitForFit(page)
+
+  const pages = (await rowsPerPage(page)).filter((rows) => rows !== '')
+  expect(pages.length).toBeGreaterThan(1)
+  // Every piece opens with the header and keeps at least two data rows.
+  for (const rows of pages) expect(rows).toMatch(/^HDD+$/)
+  expect(pages.join('').replaceAll('H', '')).toHaveLength(24)
+  expect(await bleedingFragments(page)).toEqual([])
+
+  // The code block starts on the page the table ends on.
+  const codePages = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('.preview-pane .fp-window')].filter(
+        (view) => {
+          const edge = view.getBoundingClientRect()
+          return [...view.querySelectorAll('pre')].some((pre) =>
+            [...pre.getClientRects()].some(
+              (rect) =>
+                rect.left >= edge.left - 1 && rect.right <= edge.right + 1
+            )
+          )
+        }
+      ).length
+  )
+  expect(codePages).toBeGreaterThan(1)
+
+  await page.reload()
+  await waitForFit(page)
+  await expect(compressSwitch(page)).toHaveAttribute('aria-checked', 'true')
+})
+
+test('the status reports a table shrunk to fit the page width', async ({
+  page,
+}) => {
+  await openWith(page, WIDE_DOC)
+  await expect(page.locator('.status-line')).toContainText(/tables [\d.]+px/)
+})
+
+test('a code block taller than a page gets every page it runs onto', async ({
+  page,
+}) => {
+  const lines = Array.from({ length: 120 }, (_, index) => `line ${index + 1}`)
+  await openUnrounded(
+    page,
+    ['# Log', '', '```text', ...lines, '```', ''].join('\n')
+  )
+  const counts = await page.evaluate(() => {
+    const pre = document.querySelector('#fp-print-root pre')
+    const views = document.querySelectorAll('.preview-pane .fp-window')
+    const fragments = document
+      .querySelector('.preview-pane pre')
+      ?.getClientRects().length
+    return { views: views.length, fragments, hasPre: pre !== null }
+  })
+  expect(counts.hasPre).toBe(true)
+  expect(counts.fragments).toBeGreaterThan(1)
+  expect(counts.views).toBe(counts.fragments)
 })

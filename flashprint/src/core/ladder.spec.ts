@@ -49,6 +49,23 @@ describe('compactionAt', () => {
     }
   })
 
+  it('keeps blocks at their default size without compression', () => {
+    for (const compaction of levels) expect(compaction.blockScale).toBe(1)
+  })
+
+  it('shrinks blocks during the spacing phase when compressing', () => {
+    const compress = { ...FIT, compressBlocks: true }
+    const quarter = Math.round(LADDER_STEPS * 0.25)
+    expect(compactionAt(0, compress).blockScale).toBe(1)
+    expect(compactionAt(0, compress).relaxBreaks).toBe(true)
+    expect(compactionAt(quarter, compress).blockScale).toBeCloseTo(0.75 / 0.9)
+    expect(compactionAt(quarter, compress).fontPx).toBe(FIT.maxFontPx)
+    for (let level = 1; level <= LADDER_STEPS; level += 1)
+      expect(compactionAt(level, compress).blockScale).toBeLessThanOrEqual(
+        compactionAt(level - 1, compress).blockScale
+      )
+  })
+
   it('clamps a level outside the ladder', () => {
     expect(compactionAt(-5, FIT)).toEqual(at(0))
     expect(compactionAt(LADDER_STEPS + 5, FIT)).toEqual(at(LADDER_STEPS))
@@ -67,6 +84,7 @@ describe('applyCompaction', () => {
     expect(style.getPropertyValue('--fp-heading-gap')).toBe('0.7em')
     expect(style.getPropertyValue('--fp-block-gap')).toBe('0.35em')
     expect(style.getPropertyValue('--fp-heading-scale')).toBe('0.8')
+    expect(style.getPropertyValue('--fp-block-scale')).toBe('1')
     expect(root.dataset.relaxBreaks).toBe('true')
 
     applyCompaction(root, at(0))

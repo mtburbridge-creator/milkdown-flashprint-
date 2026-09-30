@@ -10,6 +10,11 @@ const SPACING_PHASE = 0.25
 // The ladder relaxes fragmentation rules from this fraction on.
 const RELAX_BREAKS_FROM = 0.5
 
+// With compressed blocks, tables and code shrink to this share of their
+// default size during the spacing phase, before the body font moves.
+// Tables start at 0.9 of the body font, so the end is 0.75 of it.
+const BLOCK_SCALE_END = 0.75 / 0.9
+
 const LINE_HEIGHT = { start: 1.5, mid: 1.3, end: 1.2 }
 const PARAGRAPH_GAP_EM = { start: 0.6, end: 0.2 }
 const HEADING_GAP_EM = { start: 1.4, end: 0.7 }
@@ -34,7 +39,7 @@ function clamp(value: number, min: number, max: number): number {
 /// `level`: it never loosens as the level grows.
 export function compactionAt(
   level: number,
-  fit: { minFontPx: number; maxFontPx: number }
+  fit: { minFontPx: number; maxFontPx: number; compressBlocks?: boolean }
 ): Compaction {
   const t = clamp(level, 0, LADDER_STEPS) / LADDER_STEPS
   const spacing = clamp(t / SPACING_PHASE, 0, 1)
@@ -64,7 +69,10 @@ export function compactionAt(
     ),
     blockGapEm: round4(lerp(BLOCK_GAP_EM.start, BLOCK_GAP_EM.end, spacing)),
     headingScale: round4(headingScale),
-    relaxBreaks: t >= RELAX_BREAKS_FROM,
+    relaxBreaks: fit.compressBlocks === true || t >= RELAX_BREAKS_FROM,
+    blockScale: fit.compressBlocks
+      ? round4(lerp(1, BLOCK_SCALE_END, spacing))
+      : 1,
   }
 }
 
@@ -79,5 +87,6 @@ export function applyCompaction(root: HTMLElement, c: Compaction): void {
   style.setProperty('--fp-heading-gap', `${c.headingGapEm}em`)
   style.setProperty('--fp-block-gap', `${c.blockGapEm}em`)
   style.setProperty('--fp-heading-scale', `${c.headingScale}`)
+  style.setProperty('--fp-block-scale', `${c.blockScale}`)
   root.dataset.relaxBreaks = c.relaxBreaks ? 'true' : 'false'
 }

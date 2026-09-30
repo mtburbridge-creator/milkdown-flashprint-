@@ -13,6 +13,7 @@ You paste markdown from a chat, a note, or a file. FlashPrint shows it in an edi
 - **Two-up printing.** Two half-size pages sit side by side on a landscape sheet. Turn it off for one portrait page per sheet.
 - **Fit to a page count.** Round to an even count, a multiple of four (two pages per sheet, printed on both sides), or an exact number.
 - **Small margins.** The default is 0.5 inch. Set any margin you like.
+- **Compress blocks.** Split tables and code blocks across pages to fill them, repeat each table's header row on every page, and shrink table text before body text.
 - **Live preview.** The preview and the printed output share one layout, so the page count on screen is the page count on paper.
 - **Full editing.** Change anything in the text. The preview refits as you type.
 

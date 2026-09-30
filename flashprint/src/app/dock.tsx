@@ -259,6 +259,27 @@ export const Dock = defineComponent<DockProps>({
           </div>
 
           <div class="dock-toggle-field">
+            <span
+              id="dock-compress-blocks"
+              title="Split tables and code blocks across pages, repeat table headers, and shrink table text first"
+            >
+              Compress blocks
+            </span>
+            <button
+              type="button"
+              class="dock-toggle"
+              role="switch"
+              aria-checked={settings.fit.compressBlocks}
+              aria-labelledby="dock-compress-blocks"
+              onClick={() => {
+                settings.fit.compressBlocks = !settings.fit.compressBlocks
+              }}
+            >
+              <span class="dock-toggle-knob" />
+            </button>
+          </div>
+
+          <div class="dock-toggle-field">
             <span id="dock-page-numbers">Page numbers</span>
             <button
               type="button"
