@@ -185,8 +185,17 @@ export function formatStatus(
         `the minimum font size; printing ${faces}`
     )
   }
+  const tables =
+    result.tableFontPx === null
+      ? ''
+      : `${STATUS_SEPARATOR}tables ${result.tableFontPx.toFixed(1)}px`
   if (rounding === 'none') {
-    return [...tally(result), { text: ' at default size', kind: 'plain' }]
+    const segments = [
+      ...tally(result),
+      { text: ' at default size', kind: 'plain' as const },
+    ]
+    if (tables) segments.push({ text: tables, kind: 'muted' })
+    return segments
   }
 
   const fontPx = result.compaction.fontPx.toFixed(1)
@@ -194,7 +203,7 @@ export function formatStatus(
   return [
     ...tally(result),
     {
-      text: `${STATUS_SEPARATOR}font ${fontPx}px${STATUS_SEPARATOR}line ${lineHeight}`,
+      text: `${STATUS_SEPARATOR}font ${fontPx}px${STATUS_SEPARATOR}line ${lineHeight}${tables}`,
       kind: 'muted',
     },
   ]

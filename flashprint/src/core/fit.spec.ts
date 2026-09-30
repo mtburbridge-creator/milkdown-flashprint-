@@ -15,7 +15,13 @@ const BOX: PageBox = resolvePageBox({
 })
 
 function settings(rounding: RoundingMode, exactPages = 4): FitSettings {
-  return { rounding, exactPages, minFontPx: 9, maxFontPx: 16 }
+  return {
+    rounding,
+    exactPages,
+    minFontPx: 9,
+    maxFontPx: 16,
+    compressBlocks: false,
+  }
 }
 
 // Read the ladder level back from the variables `applyCompaction` wrote.

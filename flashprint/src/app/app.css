@@ -531,6 +531,11 @@ body {
   color: var(--fp-text);
 }
 
+/* Only the first switch pushes the group to the right edge. */
+.dock-toggle-field + .dock-toggle-field {
+  margin-left: 0;
+}
+
 .dock-toggle {
   position: relative;
   width: 34px;

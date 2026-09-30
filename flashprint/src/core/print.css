@@ -8,6 +8,7 @@
   --fp-heading-gap: 1.4em;
   --fp-block-gap: 0.8em;
   --fp-heading-scale: 1;
+  --fp-block-scale: 1;
 
   font-family: 'Noto Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--fp-font-size);
@@ -89,13 +90,16 @@
 
 .fp-doc pre {
   font-family: 'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;
-  font-size: 0.85em;
+  font-size: calc(0.85em * var(--fp-block-scale));
   line-height: 1.35;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   background: #f3f3f3;
   padding: 0.6em 0.8em;
   margin: var(--fp-block-gap) 0;
+  /* A block split across pages gets its padding on every piece. */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
@@ -129,7 +133,10 @@
   margin: var(--fp-block-gap) 0;
   width: auto;
   max-width: 100%;
-  font-size: min(0.9em, var(--fp-wide-font, 0.9em));
+  font-size: min(
+    calc(0.9em * var(--fp-block-scale)),
+    var(--fp-wide-font, 100em)
+  );
 }
 
 .fp-doc table[data-fp-squeeze] :is(th, td) {
@@ -285,9 +292,15 @@
   break-inside: avoid;
 }
 
-/* A header row alone at the foot of a page reads as a broken table. */
-.fp-doc tr:first-child:has(th) {
+/* A header row stays with two data rows, and the last row never starts a
+   page alone. */
+.fp-doc tr:first-child:has(th),
+.fp-doc tr:first-child:has(th) + tr {
   break-after: avoid;
+}
+
+.fp-doc tr:last-child:not(:first-child) {
+  break-before: avoid;
 }
 
 .fp-doc h1,
@@ -304,6 +317,31 @@
 .fp-doc[data-relax-breaks='true'] table,
 .fp-doc[data-relax-breaks='true'] blockquote {
   break-inside: auto;
+}
+
+/* Compressed blocks. Tables and code blocks split to fill each page, and
+   `splitTables` repeats a table's header row on every page it reaches.
+   Tighter padding leaves more of the page width for the text. */
+.fp-doc[data-compress='true'] table {
+  font-size: max(
+    7px,
+    min(calc(0.9em * var(--fp-block-scale)), var(--fp-wide-font, 100em))
+  );
+}
+
+.fp-doc[data-compress='true'] :is(th, td) {
+  padding: 0.15em 0.35em;
+}
+
+.fp-doc[data-compress='true'] pre {
+  padding: 0.4em 0.6em;
+  line-height: 1.25;
+  orphans: 3;
+  widows: 3;
+}
+
+.fp-doc table[data-fp-continued] {
+  margin-top: 0;
 }
 
 /* One definition of the page flow. `measurePages` counts the columns this

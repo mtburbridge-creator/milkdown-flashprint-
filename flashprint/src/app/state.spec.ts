@@ -30,6 +30,14 @@ describe('loadSettings', () => {
     expect(fit.maxFontPx).toBe(FONT_MAX_PX)
   })
 
+  it('reads the compress switch and ignores a value of the wrong type', () => {
+    store({ fit: { compressBlocks: true } })
+    expect(loadSettings().fit.compressBlocks).toBe(true)
+    store({ fit: { compressBlocks: 'yes' } })
+    expect(loadSettings().fit.compressBlocks).toBe(false)
+    expect(DEFAULT_SETTINGS.fit.compressBlocks).toBe(false)
+  })
+
   it('caps the exact page count and the margin', () => {
     store({ page: { marginIn: 9 }, fit: { exactPages: 99999 } })
     const settings = loadSettings()

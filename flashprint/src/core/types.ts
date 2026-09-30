@@ -43,6 +43,10 @@ export interface FitSettings {
   minFontPx: number
   /// The body font size at level 0, before any compaction.
   maxFontPx: number
+  /// Split tables and code blocks across pages to fill them, repeat a
+  /// table's header row on each page, and shrink table and code text
+  /// before body text.
+  compressBlocks: boolean
 }
 
 /// One point on the compaction ladder. `applyCompaction` maps these to
@@ -60,6 +64,9 @@ export interface Compaction {
   headingScale: number
   /// When true, a tall code block or table may split across pages.
   relaxBreaks: boolean
+  /// Multiplier on the font of tables and code blocks. 1 keeps their
+  /// default size.
+  blockScale: number
 }
 
 export interface FitResult {
@@ -81,4 +88,7 @@ export interface FitResult {
   /// True when a time budget or an abort stopped the search early. The
   /// result then holds the last level measured, not the best one.
   timedOut: boolean
+  /// Font size of the smallest table, in pixels, when a table prints
+  /// smaller than its default size. `null` otherwise.
+  tableFontPx: number | null
 }

@@ -1,7 +1,7 @@
 import type { FitResult, FitSettings, PageBox } from './types'
 
 import { applyCompaction, compactionAt, LADDER_STEPS } from './ladder'
-import { measurePages } from './measure'
+import { measurePages, settleDocument } from './measure'
 import { sheetsFor, sidesFor } from './paper'
 import { pickTarget } from './target'
 import { capWideBlocks } from './wide'
@@ -76,6 +76,20 @@ function* searchLevels(
   return { level: best, pages: bestPages, reached: true }
 }
 
+// A table prints at this share of the body font unless something shrank
+// it. The slack absorbs rounding in the computed size.
+const TABLE_SHARE = 0.9
+const TABLE_SLACK_PX = 0.05
+
+/// Settles the document at the result's compaction and reports a table
+/// printed below its default size.
+function settle(doc: HTMLElement, box: PageBox, result: FitResult): FitResult {
+  const smallest = settleDocument(doc, box)
+  const normal = result.compaction.fontPx * TABLE_SHARE
+  const shrunk = smallest !== null && smallest < normal - TABLE_SLACK_PX
+  return { ...result, tableFontPx: shrunk ? smallest : null }
+}
+
 interface FitRun {
   measureAt: (level: number) => number
   finish: (outcome: SearchOutcome, timedOut: boolean) => FitResult
@@ -89,7 +103,9 @@ function startFit(opts: FitOptions): FitRun {
   const { box, doc, fit } = opts
   const count = opts.measure ?? measurePages
 
-  // The caps are pixel sizes, so they hold at every level below.
+  // The flag changes block padding, so it goes on before the caps are
+  // measured. The caps are pixel sizes, so they hold at every level below.
+  doc.dataset.compress = fit.compressBlocks ? 'true' : 'false'
   capWideBlocks(doc, box)
 
   const measureAt = (level: number): number => {
@@ -114,6 +130,7 @@ function startFit(opts: FitOptions): FitRun {
       level: outcome.level,
       compaction,
       timedOut,
+      tableFontPx: null,
     }
   }
 
@@ -132,11 +149,11 @@ function startFit(opts: FitOptions): FitRun {
 /// Shrink the document until it lands on the target page count.
 export function fitDocument(opts: FitOptions): FitResult {
   const run = startFit(opts)
-  if (!run.search) return run.natural
+  if (!run.search) return settle(opts.doc, opts.box, run.natural)
 
   let step = run.search.next()
   while (!step.done) step = run.search.next(run.measureAt(step.value))
-  return run.finish(step.value, false)
+  return settle(opts.doc, opts.box, run.finish(step.value, false))
 }
 
 function yieldToBrowser(): Promise<void> {
@@ -151,7 +168,7 @@ export async function fitDocumentAsync(
   budget: FitBudget = {}
 ): Promise<FitResult> {
   const run = startFit(opts)
-  if (!run.search) return run.natural
+  if (!run.search) return settle(opts.doc, opts.box, run.natural)
 
   const exhausted = () =>
     budget.signal?.aborted === true ||
@@ -166,12 +183,12 @@ export async function fitDocumentAsync(
   let step = run.search.next()
   while (!step.done) {
     await yieldToBrowser()
-    if (exhausted()) return run.finish(last, true)
+    if (exhausted()) return settle(opts.doc, opts.box, run.finish(last, true))
     const level = step.value
     const pages = run.measureAt(level)
     const target = run.natural.targetPages ?? pages
     last = { level, pages, reached: pages <= target }
     step = run.search.next(pages)
   }
-  return run.finish(step.value, false)
+  return settle(opts.doc, opts.box, run.finish(step.value, false))
 }

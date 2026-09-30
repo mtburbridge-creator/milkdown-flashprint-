@@ -5,7 +5,13 @@ import type { FitSettings, RoundingMode } from './types'
 import { pickTarget } from './target'
 
 function settings(rounding: RoundingMode, exactPages = 8): FitSettings {
-  return { rounding, exactPages, minFontPx: 9, maxFontPx: 16 }
+  return {
+    rounding,
+    exactPages,
+    minFontPx: 9,
+    maxFontPx: 16,
+    compressBlocks: false,
+  }
 }
 
 describe('pickTarget', () => {
